@@ -13,6 +13,7 @@
         "symfony/framework-bundle": "7.1.*",
         "symfony/runtime": "7.1.*",
         "symfony/twig-bundle": "7.1.*",
+        "symfony/webpack-encore-bundle": "^2.2",
         "symfony/yaml": "7.1.*"
     },
     "require-dev": {
