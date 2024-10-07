@@ -1,0 +1,17 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Les articles de mon blog{% endblock %}
+
+{% block body %}
+    <div class="container mx-auto">
+        <h1 class="text-5xl text-center mt-24 mb-8">Mes articles</h1>
+        <div class="flex flex-row flex-wrap justify-evenly mt-8">
+        {% for post in posts %}
+            {% include 'components/_card.html.twig' with { entity: post } only %}
+        {% endfor %}
+        </div>
+        <div class="navigation flex justify-center mb-8">
+            {{ knp_pagination_render(posts) }}
+        </div>
+    </div>
+{% endblock %}
