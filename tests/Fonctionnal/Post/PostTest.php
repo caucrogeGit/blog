@@ -1,68 +1,185 @@
 <?php
+
 namespace App\Tests\Fonctionnal\Post;
 
-use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use App\Entity\Post\Post;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
+/**
+ * Classe de test fonctionnel pour vérifier le bon fonctionnement des pages liées aux posts.
+ */
 class PostTest extends WebTestCase
 {
-/**
-     * Teste que la page d'accueil du blog fonctionne correctement.
-     *
-     * Ce test vérifie que la page d'accueil des posts est accessible et que le titre
-     * de la page contient le texte "Mes articles".
+    /**
+     * Teste que la page d'un post fonctionne correctement.
      */
-    public function testPostPageWorks(): void
+    public function testPagePostWorks()
     {
         // Crée un client HTTP pour simuler les requêtes
         $client = static::createClient();
 
-        // Envoie une requête GET à l'URL '/post'
-        $client->request('GET', '/post');
+        // Récupère le service de génération d'URL
+        $urlGeneratorInterface = $client->getContainer()->get('router');
+
+        // Récupère le gestionnaire d'entités Doctrine
+        $entityManager = $client->getContainer()->get('doctrine.orm.entity_manager');
+
+        // Récupère le repository pour l'entité Post
+        $postRepository = $entityManager->getRepository(Post::class);
+
+        // Récupère un post dans la base de données
+        $post = $postRepository->findOneBy([]);
+
+        // Envoie une requête GET à l'URL générée pour afficher un post spécifique
+        // L'URL est générée en utilisant le routeur Symfony avec le nom de la route 'post_show'
+        // et en passant le slug du post comme paramètre
+        $client->request('GET', $urlGeneratorInterface->generate('post.show', ['slug' => $post->getSlug()]));
 
         // Vérifie que la réponse est réussie et que le code de statut est 200
         $this->assertResponseIsSuccessful();
         $this->assertResponseStatusCodeSame(Response::HTTP_OK);
 
-        // Vérifie qu'un élément <h1> existe sur la page
+        // Vérifie que le titre de la page contient le titre du post
         $this->assertSelectorExists('h1');
-
-        // Vérifie que le texte de l'élément <h1> contient "Mes articles"
-        $this->assertSelectorTextContains('h1', 'Mes articles');
+        $this->assertSelectorTextContains('h1', ucfirst($post->getTitle()));
     }
 
-/**
-     * Teste que la pagination fonctionne correctement.
-     *
-     * Ce test vérifie que la pagination des posts fonctionne en vérifiant que la première
-     * page contient 9 posts et que la deuxième page contient au moins 1 post.
+    /**
+     * Teste que le bouton "Retourner au blog" fonctionne correctement.
      */
-    public function testPaginationWorks(): void
+    public function testButtonReturnToBlogWorks()
     {
         // Crée un client HTTP pour simuler les requêtes
         $client = static::createClient();
 
-        // Envoie une requête GET à l'URL '/post'
-        $crawler = $client->request('GET', '/post');
+        // Récupère le service de génération d'URL
+        $urlGeneratorInterface = $client->getContainer()->get('router');
+
+        // Récupère le gestionnaire d'entités Doctrine
+        $entityManager = $client->getContainer()->get('doctrine.orm.entity_manager');
+
+        // Récupère le repository pour l'entité Post
+        $postRepository = $entityManager->getRepository(Post::class);
+
+        // Récupère le premier post dans la base de données
+        $post = $postRepository->findOneBy([]);
+
+        // Envoie une requête GET à l'URL générée pour afficher un post spécifique
+        // L'URL est générée en utilisant le routeur Symfony avec le nom de la route 'post_show'
+        // et en passant le slug du post comme paramètre
+        $client->request('GET', $urlGeneratorInterface->generate('post.show', ['slug' => $post->getSlug()]));
 
         // Vérifie que la réponse est réussie et que le code de statut est 200
         $this->assertResponseIsSuccessful();
         $this->assertResponseStatusCodeSame(Response::HTTP_OK);
 
-        // Vérifie qu'il y a 9 éléments avec la classe 'div.card' sur la page
-        $posts = $crawler->filter('div.card');
-        $this->assertEquals(9, count($posts));
+        // Vérifie que le lien "Retourner au blog" est présent et fonctionne
+        // Sélectionne le lien "Retourner au blog" et récupère son URL
+        $link = $client->getCrawler()->selectLink('Retourner au blog')->link()->getUri();
 
-        // Sélectionne le lien de la page 2 et fait une requête GET sur ce lien
-        $link = $crawler->selectLink('2')->extract(['href'])[0];
-        $crawler = $client->request('GET', $link);
+        // Envoie une requête GET à l'URL du lien "Retourner au blog"
+        $client->request('GET', $link);
 
         // Vérifie que la réponse est réussie et que le code de statut est 200
         $this->assertResponseIsSuccessful();
         $this->assertResponseStatusCodeSame(Response::HTTP_OK);
-
-        // Vérifie qu'il y a au moins 1 élément avec la classe 'div.card' sur la page 2
-        $posts = $crawler->filter('div.card');
-        $this->assertGreaterThanOrEqual(1, count($posts));
+        $this->assertRouteSame('post.index');
     }
+
+    /**
+     * Teste le partable du lien de post sur Facebook.
+     */
+    public function testShareOnFacebookWorks()
+    {
+        // Déclare une variable pour l'URL de partage sur Facebook
+        $lienPartageFacebook = "https://www.facebook.com/sharer/sharer.php?u=";
+
+        // Crée un client HTTP pour simuler les requêtes
+        $client = static::createClient();
+
+        // Récupère le service de génération d'URL
+        $urlGeneratorInterface = $client->getContainer()->get('router');
+
+        // Récupère le gestionnaire d'entités Doctrine
+        $entityManager = $client->getContainer()->get('doctrine.orm.entity_manager');
+
+        // Récupère le repository pour l'entité Post
+        $postRepository = $entityManager->getRepository(Post::class);
+
+        // Récupère le premiser post trouvé dans la base de données
+        $post = $postRepository->findOneBy([]);
+
+        // L'URL est générée en utilisant le routeur Symfony avec le nom de la route 'post.show' et en passant le slug du post comme paramètre
+        $url = $urlGeneratorInterface->generate('post.show', ['slug' => $post->getSlug()]);
+
+        // Envoie une requête GET avec l'URL générée pour afficher un post spécifique
+        $client->request('GET', $url);
+
+        // Vérifie que la réponse est réussie et que le code de statut est 200
+        $this->assertResponseIsSuccessful();
+        $this->assertResponseStatusCodeSame(Response::HTTP_OK);
+
+        /** Vérifie que le lien de partage est correcte et fonctionne */
+
+            // Récupere la balise html contenant le filtre et récupère son URL
+            $htmlBalise = $client->getCrawler()->filter('.share.facebook');
+            // Récupère l'URL du lien de partage dans la balise html <a>
+            $aHref = $htmlBalise->attr('href');
+
+            // Récupère l'URL du lien de partage dans la balise html <a>
+            $aLink = $htmlBalise->link()->getUri();
+
+        // Vérifie que la chaîne $lienPartageFacebook + le slug du post est la meme que celle contenu dans la chaîne $aLink
+        $this->assertEquals($aHref, $lienPartageFacebook .'http://localhost' .$url);
+    }
+
+    /**
+     * Teste le partable du lien de post sur X
+     */
+    public function testShareOnXWorks()
+    {
+        // Déclare une variable pour l'URL de partage sur X
+        $lienPartageX = "https://twitter.com/intent/tweet?text=";
+
+        // Crée un client HTTP pour simuler les requêtes
+        $client = static::createClient();
+
+        // Récupère le service de génération d'URL
+        $urlGeneratorInterface = $client->getContainer()->get('router');
+
+        // Récupère le gestionnaire d'entités Doctrine
+        $entityManager = $client->getContainer()->get('doctrine.orm.entity_manager');
+
+        // Récupère le repository pour l'entité Post
+        $postRepository = $entityManager->getRepository(Post::class);
+
+        // Récupère le premiser post trouvé dans la base de données
+        $post = $postRepository->findOneBy([]);
+
+        // L'URL est générée en utilisant le routeur Symfony avec le nom de la route 'post.show' et en passant le slug du post comme paramètre
+        $url = $urlGeneratorInterface->generate('post.show', ['slug' => $post->getSlug()]);
+
+        // Envoie une requête GET avec l'URL générée pour afficher un post spécifique
+        $client->request('GET', $url);
+
+        // Vérifie que la réponse est réussie et que le code de statut est 200
+        $this->assertResponseIsSuccessful();
+        $this->assertResponseStatusCodeSame(Response::HTTP_OK);
+
+        /** Vérifie que le lien de partage est correcte et fonctionne */
+
+            // Récupere la balise html contenant le filtre et récupère son URL
+            $htmlBalise = $client->getCrawler()->filter('.share.x');
+            // Récupère l'URL du lien de partage dans la balise html <a>
+            $aHref = $htmlBalise->attr('href');
+
+            // Récupère l'URL du lien de partage dans la balise html <a>
+            $aLink = $htmlBalise->link()->getUri();
+
+        // Vérifie que la chaîne $lienPartageFacebook + le slug du post est la meme que celle contenu dans la chaîne $aLink
+        $this->assertEquals($aHref, $lienPartageX .'http://localhost' .$url);
+    }    
 }
+
+
