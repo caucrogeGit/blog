@@ -7,6 +7,8 @@ use Cocur\Slugify\Slugify;
 use App\Entity\Post\Thumbnail;
 use Doctrine\ORM\Mapping as ORM;
 use App\Repository\Post\PostRepository;
+use Doctrine\Common\Collections\Collection;
+use Doctrine\Common\Collections\ArrayCollection;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 
@@ -52,7 +54,18 @@ class Post
     #[Assert\NotNull()]
     private DateTimeImmutable $createdAt;  
 
-    // Méthodes
+    // Relations
+    #[ORM\ManyToMany(targetEntity: Category::class, mappedBy: 'posts')]
+    private Collection $categories;
+
+    // Constructeur
+    public function __construct(){
+        $this->updatedAt = new DateTimeImmutable();
+        $this->createdAt = new DateTimeImmutable();
+        $this->categories = new ArrayCollection();
+    }
+
+    // Méthodes evenementielles
     #[ORM\PrePersist]
     public function prePersist()
     {
@@ -66,6 +79,31 @@ class Post
     {
         $this->updatedAt = new DateTimeImmutable();
     }
+
+    // Méthodes relationnelles
+    public function getCategories():Collection
+    {
+        return $this->categories;
+    }
+
+    public function addCategory(Category $category): self
+    {
+        if(!$this->categories->contains($category)) {
+            $this->categories[] = $category;
+            $category->addPost($this);
+        }
+
+        return $this;
+    }
+
+    public function removeCategory(Category $category): self
+    {
+        if ($this->categories->removeElement($category)) {
+            $category->removePost($this);
+        }
+
+        return $this;
+    }    
 
     // Gettters et Setters
     public function getId(): ?int
@@ -157,6 +195,7 @@ class Post
         return $this;
     }
 
+    // Méthode magique
     public function __toString()
     {
         return $this->title;
