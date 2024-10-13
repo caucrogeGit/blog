@@ -2,7 +2,7 @@
 
 namespace App\Tests\Fonctionnal\Post;
 
-use App\Entity\Post\Post;
+use App\Entity\Post;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 

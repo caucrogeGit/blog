@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Entity\Post;
+namespace App\Entity;
 
 use DateTimeImmutable;
 use Cocur\Slugify\Slugify;
-use App\Entity\Post\Thumbnail;
+use App\Entity\Thumbnail;
 use Doctrine\ORM\Mapping as ORM;
-use App\Repository\Post\PostRepository;
+use App\Repository\PostRepository;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\Collections\ArrayCollection;
 use Symfony\Component\Validator\Constraints as Assert;

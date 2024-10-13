@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Entity\Post;
+namespace App\Entity;
 
 use DateTimeImmutable;
-use App\Entity\Post\Post;
+use App\Entity\Post;
 use Cocur\Slugify\Slugify;
 use Doctrine\ORM\Mapping as ORM;
-use App\Repository\Post\CategoryRepository;
+use App\Repository\CategoryRepository;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping\HasLifecycleCallbacks;
 use Doctrine\Common\Collections\ArrayCollection;

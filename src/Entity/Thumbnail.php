@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Entity\Post;
+namespace App\Entity;
 
 use DateTimeImmutable;
-use App\Entity\Post\Post;
+use App\Entity\Post;
 use Doctrine\ORM\Mapping as ORM;
 use Vich\UploaderBundle\Entity\File;
-use App\Repository\Post\ThumbnailRepository;
+use App\Repository\ThumbnailRepository;
 use Vich\UploaderBundle\Mapping\Annotation as Vich;
 
 /**

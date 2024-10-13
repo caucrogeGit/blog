@@ -3,9 +3,9 @@
 namespace App\DataFixtures;
 
 use Faker\Factory;
-use App\Entity\Post\Post;
-use App\Entity\Post\Category;
-use App\Repository\Post\PostRepository;
+use App\Entity\Post;
+use App\Entity\Category;
+use App\Repository\PostRepository;
 use Doctrine\Persistence\ObjectManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Bundle\FixturesBundle\Fixture;
@@ -33,9 +33,7 @@ class CategoryFixtures extends Fixture implements DependentFixtureInterface
             // Pour éviter les doublons, on concatène deux mots aléatoires
             $category->setName($faker->words(1, true) . ' ' . $faker->words(1, true));
             // Description aléatoire ou null
-            $category->setDescription(
-                mt_rand(0, 1) == 1 ? $faker->realText(254) : null
-            );
+            $category->setDescription($faker->realText(254));
             // Ajout de la catégorie au tableau $categories
             $categories[] = $category;
 

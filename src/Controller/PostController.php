@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Controller\blog;
+namespace App\Controller;
 
-use App\Entity\Post\Post;
-use App\Repository\Post\PostRepository;
+use App\Entity\Post;
+use App\Repository\PostRepository;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
@@ -23,6 +23,7 @@ class PostController extends AbstractController{
     {
         return $this->render('pages/post/show.html.twig', [
             'post' => $post,
+            'absolutePath' => $this->generateUrl('post.show', ['slug' => $post->getSlug()])
         ]);
     }
 }
