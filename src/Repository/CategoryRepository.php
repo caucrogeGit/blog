@@ -41,7 +41,6 @@ class CategoryRepository extends ServiceEntityRepository
         return $this->paginator->paginate(
             $queryBuilder,
             $request->query->getInt('page', 1),
-            9
-        );
+            9);
     }
 }

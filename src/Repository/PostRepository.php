@@ -5,7 +5,7 @@ use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Knp\Component\Pager\PaginatorInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
-use Knp\Component\Pager\Pagination\SlidingPagination;
+use Knp\Bundle\PaginatorBundle\Pagination\SlidingPagination;
 use App\Entity\Post;
 
 class PostRepository extends ServiceEntityRepository
@@ -47,8 +47,8 @@ class PostRepository extends ServiceEntityRepository
         // Retourne la pagination des résultats
         return $this->paginator->paginate(
             $queryBuilder,
-            $request->query->getInt('page', 1), // Numéro de la page actuelle
-            9 // Nombre d'éléments par page
+            $request->query->getInt('page', 1),
+            9
         );
     }
 }

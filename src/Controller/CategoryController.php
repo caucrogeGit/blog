@@ -22,8 +22,8 @@ class CategoryController extends AbstractController
     public function show(#[MapEntity(mapping: ['slug' => 'slug'])] Category $category): Response
     {
         return $this->render('pages/category/show.html.twig', [
-            'post' => $category,
-            'absolutePath' => $this->generateUrl('post.show', ['slug' => $category->getSlug()])
+            'category' => $category,
         ]);
     }
 }
+CategoryController.php
