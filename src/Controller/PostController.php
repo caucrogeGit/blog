@@ -15,7 +15,7 @@ class PostController extends AbstractController{
     public function index(PostRepository $postRepository)
     {   
         return $this->render('pages/post/index.html.twig',
-        ['posts' => $postRepository->findPublished()]);
+        ['posts' => $postRepository->findPublishedWithPaginator()]);
     }
 
     #[Route('/post/{slug}', name: 'post.show', methods: ['GET'])]
@@ -23,7 +23,6 @@ class PostController extends AbstractController{
     {
         return $this->render('pages/post/show.html.twig', [
             'post' => $post,
-            'absolutePath' => $this->generateUrl('post.show', ['slug' => $post->getSlug()])
         ]);
     }
 }
