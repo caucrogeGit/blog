@@ -43,4 +43,5 @@ class CategoryRepository extends ServiceEntityRepository
             $request->query->getInt('page', 1),
             9);
     }
+
 }

@@ -142,6 +142,11 @@ class Category
     }
 
     // Méthode magique __toString
+    public function getType(): string
+    {
+        return 'Category';
+    }
+
     public function __toString()
     {
         return $this->name;

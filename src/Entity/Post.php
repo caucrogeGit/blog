@@ -196,6 +196,12 @@ class Post
     }
 
     // Méthode magique
+    
+    public function getType(): string
+    {
+        return 'Post';
+    }
+
     public function __toString()
     {
         return $this->title;
