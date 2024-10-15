@@ -28,7 +28,7 @@ class PostFixtures extends Fixture
         $faker = Factory::create('fr_FR');
         for($i = 0; $i < 100; $i++) {
             $post = new Post();
-            $post->setTitle($faker->words(4, true));
+            $post->setTitle("p-".$faker->words(4, true));
             $post->setContent($faker->realText(1800));
             $post->setState(mt_rand(0, 1) ? Post::STATES[0] : Post::STATES[1]);
 

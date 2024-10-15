@@ -4,7 +4,7 @@ const theme = require('./theme-flowbite');
 module.exports = {
   content: [
     "./assets/**/*.js",
-    "./templates/**/*.html.twig",
+    "./templates/**/*.twig",
     "./node_modules/flowbite/**/*.js",
   ],
   theme: theme,

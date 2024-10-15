@@ -2,9 +2,10 @@
 
 namespace App\Entity;
 
+use App\Entity\Tag;
 use DateTimeImmutable;
-use Cocur\Slugify\Slugify;
 use App\Entity\Thumbnail;
+use Cocur\Slugify\Slugify;
 use Doctrine\ORM\Mapping as ORM;
 use App\Repository\PostRepository;
 use Doctrine\Common\Collections\Collection;
@@ -58,11 +59,15 @@ class Post
     #[ORM\ManyToMany(targetEntity: Category::class, mappedBy: 'posts')]
     private Collection $categories;
 
+    #[ORM\ManyToMany(targetEntity: Tag::class, mappedBy: 'posts')]
+    private Collection $tags;
+
     // Constructeur
     public function __construct(){
         $this->updatedAt = new DateTimeImmutable();
         $this->createdAt = new DateTimeImmutable();
         $this->categories = new ArrayCollection();
+        $this->tags = new ArrayCollection();
     }
 
     // Méthodes evenementielles
@@ -80,13 +85,14 @@ class Post
         $this->updatedAt = new DateTimeImmutable();
     }
 
-    // Méthodes relationnelles
+    /* Méthodes relationnelles */
+    // Categories
     public function getCategories():Collection
     {
         return $this->categories;
     }
 
-    public function addCategory(Category $category): self
+    public function addCategory(Category $category): static
     {
         if(!$this->categories->contains($category)) {
             $this->categories[] = $category;
@@ -96,10 +102,35 @@ class Post
         return $this;
     }
 
-    public function removeCategory(Category $category): self
+    public function removeCategory(Category $category): static
     {
         if ($this->categories->removeElement($category)) {
             $category->removePost($this);
+        }
+
+        return $this;
+    }    
+
+    // Tags
+    public function getTag(): Collection
+    {
+        return $this->tags;
+    }
+
+    public function addTag(Tag $tag): static
+    {
+        if(!$this->tags->contains($tag)) {
+            $this->tags[] = $tag;
+            $tag->addPost($this);
+        }
+
+        return $this;
+    }
+
+    public function removeTag(Tag $tag): static
+    {
+        if ($this->tags->removeElement($tag)) {
+            $tag->removePost($this);
         }
 
         return $this;
@@ -116,7 +147,7 @@ class Post
         return $this->title;
     }
 
-    public function setTitle(string $title):self
+    public function setTitle(string $title):static
     {
         $this->title = $title;
 
@@ -128,7 +159,7 @@ class Post
         return $this->slug;
     }
 
-    public function setSlug($slug):self
+    public function setSlug($slug):static
     {
         $this->slug = $slug;
 
@@ -140,7 +171,7 @@ class Post
         return $this->content;
     }
 
-    public function setContent(string $content):self
+    public function setContent(string $content):static
     {
         $this->content = $content;
 
@@ -152,7 +183,7 @@ class Post
         return $this->thumbnail;
     }
 
-    public function setThumbnail($thumbnail) : self
+    public function setThumbnail($thumbnail) : static
     {
         $this->thumbnail = $thumbnail;
 
@@ -164,7 +195,7 @@ class Post
         return $this->state;
     }
 
-    public function setState(string $state):self
+    public function setState(string $state):static
     {
         $this->state = $state;
 
@@ -176,7 +207,7 @@ class Post
         return $this->updatedAt;
     }
 
-    public function setUpdatedAt(DateTimeImmutable $updatedAt):self
+    public function setUpdatedAt(DateTimeImmutable $updatedAt):static
     {
         $this->updatedAt = $updatedAt;
 
@@ -188,7 +219,7 @@ class Post
         return $this->createdAt;
     }
 
-    public function setCreatedAt(DateTimeImmutable $createdAt):self
+    public function setCreatedAt(DateTimeImmutable $createdAt):static
     {
         $this->createdAt = $createdAt;
 
@@ -206,5 +237,4 @@ class Post
     {
         return $this->title;
     }
-
 }

@@ -3,6 +3,7 @@
 namespace App\DataFixtures;
 
 use Faker\Factory;
+use App\Entity\Tag;
 use App\Entity\Post;
 use App\Entity\Category;
 use App\Repository\PostRepository;
@@ -12,7 +13,7 @@ use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Common\DataFixtures\DependentFixtureInterface;
 
 
-class CategoryFixtures extends Fixture implements DependentFixtureInterface
+class CategoryTagFixtures extends Fixture implements DependentFixtureInterface
 {
     public function __construct(
         private EntityManagerInterface $entityManager, 
@@ -27,22 +28,27 @@ class CategoryFixtures extends Fixture implements DependentFixtureInterface
         // Utilisation de Faker pour générer des données fictives en français
         $faker = Factory::create('fr_FR');
 
+        // Récupération de tous les posts
+        $posts = $this->postRepository->findAll();
+
+        /** Catégories */
+
         // Création de 10 catégories fictives
         for ($i = 0; $i < 10; $i++) {
             $category = new Category();
+
             // Pour éviter les doublons, on concatène deux mots aléatoires
-            $category->setName($faker->words(1, true) . ' ' . $faker->words(1, true));
+            $category->setName("c-".$faker->words(1, true) . ' ' . $faker->words(1, true));
+
             // Description aléatoire ou null
             $category->setDescription($faker->realText(254));
+
             // Ajout de la catégorie au tableau $categories
             $categories[] = $category;
 
             // Persistance de la catégorie
             $manager->persist($category);
         }
-
-        // Récupération de tous les posts
-        $posts = $this->postRepository->findAll();
 
         // Assignation de 1 à 5 catégories aléatoires à chaque post
         foreach ($posts as $post) {
@@ -52,6 +58,37 @@ class CategoryFixtures extends Fixture implements DependentFixtureInterface
                 );
             }
         }
+
+        /** Tags */
+        // Création de 10 tags fictifs
+        for ($i = 0; $i < 10; $i++) {
+            $tag = new Tag();
+
+            // Pour éviter les doublons, on concatène deux mots aléatoires
+            $tag->setName("t-".$faker->words(1, true) . ' ' . $faker->words(1, true));
+
+            // Description aléatoire ou null
+            $tag->setDescription($faker->realText(254));
+
+            // Ajout de la catégorie au tableau $categories
+            $tags[] = $tag;
+
+            // Persistance de la catégorie
+            $manager->persist($tag);
+        }
+
+        // Assignation de 1 à 5 catégories aléatoires à chaque post
+        foreach ($posts as $post) {
+            for ($i = 0; $i < mt_rand(1, 5); $i++) {
+                $post->addTag(
+                    $tags[mt_rand(0, count($tags) - 1)]
+                );
+            }
+        }
+
+
+
+
 
         // Sauvegarde des changements dans la base de données
         $manager->flush();

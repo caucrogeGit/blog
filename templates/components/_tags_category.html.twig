@@ -1,0 +1,13 @@
+{% if tags %}
+	{% for tag in tags %}
+		{% if tag.type == 'Category' %}
+			{% set name = tag.name %}
+		{% endif %}
+		{% if tag.type == 'Post' %}
+			{% set name = tag.title %}
+		{% endif %}
+		<span class="text-xs inline-block mr-2 mb-2 py-1 px-2.5 leading-none text-center whitespace-nowrap align-baseline font-bold bg-amber-900 text-white rounded-full">
+			<a href="{{ path('category.show', {'slug': tag.slug, 'returnTo': app.request.uri }) }}">{{ name }}</a>
+		</span>
+	{% endfor %}
+{% endif %}
