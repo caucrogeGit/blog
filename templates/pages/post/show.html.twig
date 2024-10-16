@@ -23,23 +23,15 @@
 		{% endif %}
 
 		<div class="w-2/3 mx-auto my-8 leading-6">
-			<div class="mb-1 mx-auto my-4 leading-6">
-				<div class="badges flex justify-start my-1 flex-wrap">                                          
-					{% include 'components/_tags_category.html.twig' with {'tags': post.categories} %}
-					<a class="inline-block relative -top-1" href="{{ path('category.show', {slug: post.slug}) }}">
-						<svg class="h-8 w-8 text-amber-900 align-middle" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">  
-							<path stroke="none" d="M0 0h24v24H0z"/>  
-							<rect x="4" y="4" width="16" height="16" rx="2" />  
-							<line x1="9" y1="12" x2="15" y2="12" />  
-							<line x1="12" y1="9" x2="12" y2="15" />
-						</svg>
-					</a>
-				</div>
-			{{ post.content|raw }}
-			<p class="text-xs mt-8">Dernière mis à jour le
+			<div class="mb-1 mx-auto my-4 leading-6">                                        
+				{% include 'components/_tags_category.html.twig' with {'tag_categories': post.categories} %}
+				{{ post.content|raw }}                                        
+				{% include 'components/_tags.html.twig' with {'tags': post.tags} %}
+				<p class="text-xs mt-8">Dernière mis à jour le
 				{{ post.updatedAt|date('d/m/Y') }}</p>
+			</div>
 		</div>
-    </div>
+	</div>
 {% endblock %}
 
 

@@ -112,7 +112,7 @@ class Post
     }    
 
     // Tags
-    public function getTag(): Collection
+    public function getTags(): Collection
     {
         return $this->tags;
     }
