@@ -7,6 +7,7 @@ use Knp\Component\Pager\PaginatorInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Knp\Bundle\PaginatorBundle\Pagination\SlidingPagination;
 use App\Entity\Post;
+use App\Model\SearchData;
 
 class PostRepository extends ServiceEntityRepository
 {
@@ -52,5 +53,28 @@ class PostRepository extends ServiceEntityRepository
         );
     }
 
+    public function findBySearch(SearchData $searchData): SlidingPagination
+    {
+        // Création du QueryBuilder pour sélectionner les posts publiés
+        $queryBuilder = $this   ->createQueryBuilder('post')
+                                ->where('post.state LIKE :state')
+                                ->setParameter('state', 'STATE_PUBLISHED')
+                                ->orderBy('post.createdAt', 'DESC');
 
+        // Ajout de la condition de recherche sur le titre si searchData.search est défini
+        if (!empty($searchData->search)) {
+            $queryBuilder   ->andWhere('post.title LIKE :search')
+                            ->setParameter('search', '%' . $searchData->search . '%');
+        }
+
+        // Récupération de la requête actuelle
+        $request = $this->requestStack->getCurrentRequest();
+
+        // Retourne la pagination des résultats
+        return $this->paginator->paginate(
+            $queryBuilder->getQuery(),
+            $request->query->getInt('page', 1),
+            9
+        );
+    }
 }
