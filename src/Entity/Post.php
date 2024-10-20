@@ -15,10 +15,7 @@ use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 
 #[ORM\Entity(repositoryClass: PostRepository::class)]
 #[ORM\HasLifecycleCallbacks]
-#[UniqueEntity(
-    'titre',
-    message: 'Ce titre est déjà utilisé.'
-)]
+#[UniqueEntity('titre', message: 'Ce titre est déjà utilisé.')]
 class Post
 {
     // Déclarations
