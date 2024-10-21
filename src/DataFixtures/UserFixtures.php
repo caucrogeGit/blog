@@ -34,7 +34,6 @@ class UserFixtures extends Fixture
         $user->setLastName('Cauchon');
         $user->setPassword($this->passwordHasher->hashPassword($user, '64423151'));
         $user->addRole('ROLE_ADMIN');
-        $user->setAvatar('https://api.dicebear.com/9.x/notionists-neutral/svg?seed='.$user->getEmail());
 
         $manager->persist($user);
 

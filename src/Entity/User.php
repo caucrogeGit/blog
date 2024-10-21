@@ -81,7 +81,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->createdAt = new DateTimeImmutable();
         $this->updatedAt = new DateTimeImmutable();
         $this->logs = [['date' => $this->createdAt->format('Y-m-d H:i:s'), 'message' => 'Création du compte']];
-        $this->avatar = $this->avatar = 'https://api.dicebear.com/9.x/notionists-neutral/svg?seed='.$this->email;
+        $this->avatar = 'https://api.dicebear.com/9.x/' .$this->getAvatarStyle() .'/svg?seed='.$this->firstName.' '.$this->lastName;
     }
 
     #[ORM\PreUpdate]
@@ -195,6 +195,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function getAvatar(): ?string
     {
         return $this->avatar;
+    }
+
+    public function getAvatarStyle(): ?string
+    {
+        return "initials";
     }
 
     public function setAvatar($avatar): static
