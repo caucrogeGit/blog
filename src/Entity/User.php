@@ -3,14 +3,16 @@
 namespace App\Entity;
 
 use DateTimeImmutable;
+use Symfony\Component\Uid\Uuid;
 use Doctrine\ORM\Mapping as ORM;
 use App\Repository\UserRepository;
+use Doctrine\Common\Collections\Collection;
+use Doctrine\Common\Collections\ArrayCollection;
 use Symfony\Bridge\Doctrine\IdGenerator\UuidGenerator;
+use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
-use Symfony\Component\Security\Core\User\UserInterface;
-use Symfony\Component\Validator\Constraints as Assert;
-use Symfony\Component\Uid\Uuid;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\Table(name: '`user`')]
@@ -66,12 +68,17 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[Assert\NotNull()]
     private ?string $message = null;
 
+    // Relationships
+    #[ORM\OneToMany(targetEntity: Reaction::class, mappedBy: 'user')]
+    private Collection $reactions;
+
     // Constructeur
     public function __construct(){
         $this->roles = ['ROLE_USER'];
         $this->updatedAt = new DateTimeImmutable();
         $this->createdAt = new DateTimeImmutable();
         $this->message = 'Création du compte';
+        $this->reactions = new ArrayCollection();
     }
 
     // Méthodes evenementielles
@@ -272,5 +279,29 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function __toString(): string
     {
         return $this->email;
+    }
+
+    /**
+     * Get the value of reactions
+     *
+     * @return Collection
+     */
+    public function getReactions(): Collection
+    {
+        return $this->reactions;
+    }
+
+    /**
+     * Set the value of reactions
+     *
+     * @param Collection $reactions
+     *
+     * @return self
+     */
+    public function setReactions(Collection $reactions): self
+    {
+        $this->reactions = $reactions;
+
+        return $this;
     }
 }

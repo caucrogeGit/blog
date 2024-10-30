@@ -1,0 +1,48 @@
+# Gérer les fins de ligne pour les fichiers texte
+* text=auto eol=lf
+
+# Forcer LF pour les fichiers PHP
+*.php text eol=lf
+
+# Fichiers de configuration (YAML, XML, JSON, ENV)
+*.yml text eol=lf
+*.yaml text eol=lf
+*.xml text eol=lf
+*.json text eol=lf
+*.env text eol=lf
+*.ini text eol=lf
+
+# Fichiers Twig
+*.twig text eol=lf
+
+# Scripts Shell et Makefiles
+*.sh text eol=lf
+Makefile text eol=lf
+
+# Fichiers Markdown et autres fichiers texte
+*.md text eol=lf
+*.txt text eol=lf
+
+# Images (binaire, pas de conversion de fin de ligne)
+*.jpg binary
+*.jpeg binary
+*.png binary
+*.gif binary
+*.ico binary
+*.svg binary
+*.webp binary
+
+# Autres fichiers binaires (par exemple, PDFs)
+*.pdf binary
+
+# Fonts (polices de caractères)
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+
+# Node.js : Ne pas convertir les fins de ligne pour le dossier node_modules
+node_modules/* -text
+
+# Vendor : Ne pas convertir les fins de ligne pour le dossier vendor
+vendor/* -text

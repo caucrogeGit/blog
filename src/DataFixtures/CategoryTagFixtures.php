@@ -86,10 +86,6 @@ class CategoryTagFixtures extends Fixture implements DependentFixtureInterface
             }
         }
 
-
-
-
-
         // Sauvegarde des changements dans la base de données
         $manager->flush();
     }

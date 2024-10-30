@@ -3,11 +3,13 @@
 namespace App\Entity;
 
 use App\Entity\Tag;
+use App\enum\EtatEnum;
 use DateTimeImmutable;
 use App\Entity\Thumbnail;
 use Cocur\Slugify\Slugify;
 use Doctrine\ORM\Mapping as ORM;
 use App\Repository\PostRepository;
+use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\Collections\ArrayCollection;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -18,9 +20,6 @@ use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 #[UniqueEntity('titre', message: 'Ce titre est déjà utilisé.')]
 class Post
 {
-    // Déclarations
-    const STATES = ['STATE_DRAFT','STATE_PUBLISHED'];
-
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -40,9 +39,9 @@ class Post
     
     private ?Thumbnail $thumbnail = null; 
 
-    #[ORM\Column(type:'string', length:255)]
+    #[ORM\Column(type:'string', enumType: EtatEnum::class, options: ['default' => EtatEnum::BROUILLON])]
     #[Assert\NotBlank()]
-    private string $state = Post::STATES[0];
+    private EtatEnum $state;
 
     #[ORM\Column(type:'datetime_immutable', length:255)]
     #[Assert\NotNull()]
@@ -52,12 +51,15 @@ class Post
     #[Assert\NotNull()]
     private DateTimeImmutable $createdAt;  
 
-    // Relations
+    // Relationships
     #[ORM\ManyToMany(targetEntity: Category::class, mappedBy: 'posts')]
     private Collection $categories;
 
     #[ORM\ManyToMany(targetEntity: Tag::class, mappedBy: 'posts')]
     private Collection $tags;
+
+    #[ORM\OneToMany(targetEntity: Reaction::class, mappedBy: 'post', cascade: ['persist', 'remove'])]
+    private Collection $reactions;
 
     // Constructeur
     public function __construct(){
@@ -65,6 +67,7 @@ class Post
         $this->createdAt = new DateTimeImmutable();
         $this->categories = new ArrayCollection();
         $this->tags = new ArrayCollection();
+        $this->reactions = new ArrayCollection();
     }
 
     // Méthodes evenementielles
@@ -83,7 +86,8 @@ class Post
     }
 
     /* Méthodes relationnelles */
-    // Categories
+
+    // Categories/Post ManyToMany
     public function getCategories():Collection
     {
         return $this->categories;
@@ -108,7 +112,7 @@ class Post
         return $this;
     }    
 
-    // Tags
+    // Tags/Post ManyToMany
     public function getTags(): Collection
     {
         return $this->tags;
@@ -132,6 +136,33 @@ class Post
 
         return $this;
     }    
+
+    // Reactions/Reaction //OneToMany
+    public function getReactions(): Collection
+    {
+        return $this->reactions;
+    }
+
+    public function addReaction(Reaction $reaction): static
+    {
+        if(!$this->reactions->contains($reaction)) {
+            $this->reactions[] = $reaction;
+            $reaction->setPost($this);
+        }
+
+        return $this;
+    }
+
+    public function removeReaction(Reaction $reaction, EntityManagerInterface $entityManager): static
+    {
+        if ($this->reactions->contains($reaction)) {
+            $this->reactions->removeElement($reaction);
+            $entityManager->remove($reaction); // Supprime l'entité Reaction de la base de données
+            $entityManager->flush(); // Applique la suppression en base de données
+        }
+
+        return $this;
+    }
 
     // Gettters et Setters
     public function getId(): ?int
@@ -187,12 +218,12 @@ class Post
         return $this;
     }    
 
-    public function getState():string
+    public function getState():EtatEnum
     {
         return $this->state;
     }
 
-    public function setState(string $state):static
+    public function setState(EtatEnum $state):static
     {
         $this->state = $state;
 
@@ -224,7 +255,6 @@ class Post
     }
 
     // Méthode magique
-    
     public function getType(): string
     {
         return 'Post';

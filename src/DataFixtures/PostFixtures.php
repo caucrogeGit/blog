@@ -4,6 +4,7 @@ namespace App\DataFixtures;
 
 use Faker\Factory;
 use App\Entity\Post;
+use App\enum\EtatEnum;
 use Doctrine\Persistence\ObjectManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Bundle\FixturesBundle\Fixture;
@@ -30,7 +31,7 @@ class PostFixtures extends Fixture
             $post = new Post();
             $post->setTitle("p-".$faker->words(4, true));
             $post->setContent($faker->realText(1800));
-            $post->setState(mt_rand(0, 1) ? Post::STATES[0] : Post::STATES[1]);
+            $post->setState(mt_rand(0, 1) ? EtatEnum::BROUILLON : EtatEnum::PUBLIE);
 
             $manager->persist($post);
         }
