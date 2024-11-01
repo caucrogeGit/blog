@@ -6,9 +6,11 @@ use App\Entity\Tag;
 use App\enum\EtatEnum;
 use DateTimeImmutable;
 use App\Entity\Thumbnail;
+use App\enum\DecisionEnum;
 use Cocur\Slugify\Slugify;
 use Doctrine\ORM\Mapping as ORM;
 use App\Repository\PostRepository;
+use App\Repository\ReactionRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -20,6 +22,7 @@ use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 #[UniqueEntity('titre', message: 'Ce titre est déjà utilisé.')]
 class Post
 {
+    // Propriétés
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -164,6 +167,21 @@ class Post
         return $this;
     }
 
+    public function isReactionAucune(Reaction $reaction):bool
+    {
+        return $reaction->getAvis() ==  DecisionEnum::AUCUNE;
+    }
+
+    public function isReactionApprouve(Reaction $reaction):bool
+    {
+        return $reaction->getAvis() ==  DecisionEnum::APPROUVE;
+    }
+
+    public function isReactionRejete(Reaction $reaction):bool
+    {
+        return $reaction->getAvis() ==  DecisionEnum::REJETE;
+    }
+
     // Gettters et Setters
     public function getId(): ?int
     {
@@ -254,7 +272,7 @@ class Post
         return $this;
     }
 
-    // Méthode magique
+    // Autres méthodes
     public function getType(): string
     {
         return 'Post';

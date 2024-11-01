@@ -1,13 +1,16 @@
 <?php
 namespace App\Repository;
 
-use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use App\Entity\Post;
+use App\Entity\User;
+use App\enum\EtatEnum;
+use App\Entity\Reaction;
+use App\Model\SearchData;
 use Doctrine\Persistence\ManagerRegistry;
 use Knp\Component\Pager\PaginatorInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Knp\Bundle\PaginatorBundle\Pagination\SlidingPagination;
-use App\Entity\Post;
-use App\Model\SearchData;
+use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 
 class PostRepository extends ServiceEntityRepository
 {
@@ -37,7 +40,7 @@ class PostRepository extends ServiceEntityRepository
         // Création du QueryBuilder pour sélectionner les posts publiés
         $queryBuilder = $this->createQueryBuilder('post')
                              ->where('post.state LIKE :state')
-                             ->setParameter('state', 'STATE_PUBLISHED')
+                             ->setParameter('state', EtatEnum::PUBLIE)
                              ->orderBy('post.createdAt', 'DESC')
                              ->getQuery()
                              ->getResult();
@@ -58,7 +61,7 @@ class PostRepository extends ServiceEntityRepository
         // Création du QueryBuilder pour sélectionner les posts publiés
         $queryBuilder = $this   ->createQueryBuilder('post')
                                 ->where('post.state LIKE :state')
-                                ->setParameter('state', 'STATE_PUBLISHED')
+                                ->setParameter('state', EtatEnum::PUBLIE)
                                 ->orderBy('post.createdAt', 'DESC');
 
         // Ajout de la condition de recherche sur le titre si searchData.search est défini
@@ -77,4 +80,26 @@ class PostRepository extends ServiceEntityRepository
             9
         );
     }
+
+    public function FindPostIdWithReaction(array|SlidingPagination $posts, User $user) : array
+    {
+        // Si $posts est une instance de SlidingPagination, extraire les éléments
+        if ($posts instanceof SlidingPagination) {
+            $posts = $posts->getItems();
+        }
+
+        // Récupère le repository des réactions
+        $reactionRepository = $this->getEntityManager()->getRepository(Reaction::class);
+        
+        // Récupère toutes les réactions pour des posts et l'utilisateur courant
+        $reactions = $reactionRepository->findAllByPostsAndUser($posts, $user);
+
+        // Crée un tableau associatif avec l'identifiant du post comme clé et l'avis de la réaction comme valeur
+        $postReactions = [];
+        foreach ($reactions as $reaction) {
+            $postReactions[$reaction->getPost()->getId()] = $reaction->getAvis();
+        }
+
+        return $postReactions;
+    }    
 }

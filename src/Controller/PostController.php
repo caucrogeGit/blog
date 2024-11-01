@@ -6,6 +6,8 @@ use App\Entity\Post;
 use App\Model\SearchData;
 use App\Form\SearchDataType;
 use App\Repository\PostRepository;
+use App\Repository\ReactionRepository;
+use Knp\Bundle\PaginatorBundle\Pagination\SlidingPagination;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -25,7 +27,9 @@ class PostController extends AbstractController
      * @return Response La réponse HTTP avec la vue des articles.
      */
     #[Route('/post', name: 'post.index', methods: ['GET'])]
-    public function index(PostRepository $postRepository, Request $request): Response
+    public function index(PostRepository $postRepository, 
+                          ReactionRepository $reactionRepository, 
+                          Request $request): Response
     {   
         // Crée une nouvelle instance de SearchData pour stocker les données de recherche
         $searchData = new SearchData();
@@ -34,22 +38,41 @@ class PostController extends AbstractController
         $form = $this->createForm(SearchDataType::class, $searchData);
         $form->handleRequest($request);
 
-        // Si le formulaire est soumis et valide, effectue la recherche
+        /** Si le formulaire est soumis et valide, effectue la recherche **/
+
         if ($form->isSubmitted() && $form->isValid()) {
 
             // Recherche les articles correspondant aux critères de recherche
             $posts = $postRepository->findBySearch($searchData);
 
+            // Vérifier si l'utilisateur est connecté avant de récupérer les réactions
+            $postReactions = [];
+            if ($this->getUser()) {
+                $postReactions = $postRepository->FindPostIdWithReaction($posts, $this->getUser());
+            }
+
             // Rend la vue avec les articles trouvés et le formulaire de recherche
             return $this->render('pages/post/index.html.twig', [
                 'posts' => $posts,
+                'postReactions' => $postReactions,
                 'form' => $form->createView(),
             ]);
         }
 
-        // Si le formulaire n'est pas soumis ou n'est pas valide, affiche tous les articles publiés avec pagination
+        /** Si le formulaire n'est pas soumis ou n'est pas valide, affiche tous les articles publiés avec pagination **/
+
+        // Récupérer les post publiés avec pagination
+        $posts = $postRepository->findPublishedWithPaginator();
+
+        // Vérifier si l'utilisateur est connecté avant de récupérer les réactions
+        $postReactions = [];
+        if ($this->getUser()) {
+            $postReactions = $postRepository->FindPostIdWithReaction($posts, $this->getUser());
+        }
+
         return $this->render('pages/post/index.html.twig', [
             'posts' => $postRepository->findPublishedWithPaginator(),
+            'postReactions' => $postReactions,
             'form' => $form->createView(),
         ]);
     }
