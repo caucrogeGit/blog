@@ -45,16 +45,20 @@ class PostController extends AbstractController
             // Recherche les articles correspondant aux critères de recherche
             $posts = $postRepository->findBySearch($searchData);
 
+            // Récupérer le nombre de réactions (APPROUVE OU REJETE) par post
+            $nbReactionsByPost = $reactionRepository->findNbReactionsByPost($posts);
+
             // Vérifier si l'utilisateur est connecté avant de récupérer les réactions
             $postReactions = [];
             if ($this->getUser()) {
-                $postReactions = $postRepository->FindPostIdWithReaction($posts, $this->getUser());
+                $postReactions = $postRepository->findPostIdWithReaction($posts, $this->getUser());
             }
 
             // Rend la vue avec les articles trouvés et le formulaire de recherche
             return $this->render('pages/post/index.html.twig', [
                 'posts' => $posts,
                 'postReactions' => $postReactions,
+                'nbReactionsByPost' => $nbReactionsByPost,
                 'form' => $form->createView(),
             ]);
         }
@@ -64,15 +68,19 @@ class PostController extends AbstractController
         // Récupérer les post publiés avec pagination
         $posts = $postRepository->findPublishedWithPaginator();
 
-        // Vérifier si l'utilisateur est connecté avant de récupérer les réactions
+        // Récupérer le nombre de réactions (APPROUVE OU REJETE) par post
+        $nbReactionsByPost = $reactionRepository->findNbReactionsByPost($posts);
+
+        // Recupère les réactions des posts de l'utilisateur connecté
         $postReactions = [];
         if ($this->getUser()) {
-            $postReactions = $postRepository->FindPostIdWithReaction($posts, $this->getUser());
+            $postReactions = $postRepository->findPostIdWithReaction($posts, $this->getUser());
         }
 
         return $this->render('pages/post/index.html.twig', [
             'posts' => $postRepository->findPublishedWithPaginator(),
             'postReactions' => $postReactions,
+            'nbReactionsByPost' => $nbReactionsByPost,
             'form' => $form->createView(),
         ]);
     }

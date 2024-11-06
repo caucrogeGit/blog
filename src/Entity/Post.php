@@ -19,7 +19,7 @@ use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 
 #[ORM\Entity(repositoryClass: PostRepository::class)]
 #[ORM\HasLifecycleCallbacks]
-#[UniqueEntity('titre', message: 'Ce titre est déjà utilisé.')]
+#[UniqueEntity('title', message: 'Ce titre est déjà utilisé.')]
 class Post
 {
     // Propriétés
@@ -28,17 +28,25 @@ class Post
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\Column(type:'string', length:255, unique:true)]
-    #[Assert\NotBlank()]
-    private string $title;   
+    #[Assert\Length(
+        min: 5,
+        max: 255,
+        minMessage: 'Le titre doit comporter au moins {{ limit }} caractères.',
+        maxMessage: 'Le titre ne peut pas dépasser {{ limit }} caractères.'
+    )]
+    private string $title;  
     
     #[ORM\Column(type:'string', length:255, unique:true)]
     #[Assert\NotBlank()]
     private string $slug;  
 
-    #[ORM\Column(type:'text', length:255, unique:true)]
-    #[Assert\NotBlank()]
-    private string $content; 
+    #[Assert\Length(
+        min: 20,
+        max: 2000,
+        minMessage: 'Le contenu doit comporter au moins {{ limit }} caractères.',
+        maxMessage: 'Le contenu ne peut pas dépasser {{ limit }} caractères.'
+    )]
+    private string $content;
     
     private ?Thumbnail $thumbnail = null; 
 
@@ -56,13 +64,17 @@ class Post
 
     // Relationships
     #[ORM\ManyToMany(targetEntity: Category::class, mappedBy: 'posts')]
-    private Collection $categories;
+    private ?Collection $categories = null;
 
     #[ORM\ManyToMany(targetEntity: Tag::class, mappedBy: 'posts')]
-    private Collection $tags;
+    private ?Collection $tags = null;
 
     #[ORM\OneToMany(targetEntity: Reaction::class, mappedBy: 'post', cascade: ['persist', 'remove'])]
-    private Collection $reactions;
+    private ?Collection $reactions = null;
+
+    #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'posts')]
+    #[ORM\JoinColumn(name: 'user_uuid', referencedColumnName: 'uuid', nullable: false)]
+    private ?User $user = null;
 
     // Constructeur
     public function __construct(){
@@ -71,6 +83,7 @@ class Post
         $this->categories = new ArrayCollection();
         $this->tags = new ArrayCollection();
         $this->reactions = new ArrayCollection();
+        $this->state = EtatEnum::BROUILLON;
     }
 
     // Méthodes evenementielles
@@ -90,7 +103,7 @@ class Post
 
     /* Méthodes relationnelles */
 
-    // Categories/Post ManyToMany
+    // (Posts->Categories) ManyToOne
     public function getCategories():Collection
     {
         return $this->categories;
@@ -98,11 +111,10 @@ class Post
 
     public function addCategory(Category $category): static
     {
-        if(!$this->categories->contains($category)) {
+        if (!$this->categories->contains($category)) {
             $this->categories[] = $category;
             $category->addPost($this);
         }
-
         return $this;
     }
 
@@ -115,19 +127,18 @@ class Post
         return $this;
     }    
 
-    // Tags/Post ManyToMany
-    public function getTags(): Collection
+    // (Tags<->Posts) ManyToMany
+    public function getTags(): ?Collection
     {
         return $this->tags;
     }
 
     public function addTag(Tag $tag): static
     {
-        if(!$this->tags->contains($tag)) {
+        if (!$this->tags->contains($tag)) {
             $this->tags[] = $tag;
             $tag->addPost($this);
         }
-
         return $this;
     }
 
@@ -140,8 +151,8 @@ class Post
         return $this;
     }    
 
-    // Reactions/Reaction //OneToMany
-    public function getReactions(): Collection
+    // (Post->Reactions) ManyToOne
+    public function getReactions(): ?Collection
     {
         return $this->reactions;
     }
@@ -180,6 +191,19 @@ class Post
     public function isReactionRejete(Reaction $reaction):bool
     {
         return $reaction->getAvis() ==  DecisionEnum::REJETE;
+    }
+
+    // (Posts->User) ManyToOne
+    public function getUser(): ?User
+    {
+        return $this->user;
+    }
+
+    public function setUser(?User $user): static
+    {
+        $this->user = $user;
+
+        return $this;
     }
 
     // Gettters et Setters
@@ -275,7 +299,8 @@ class Post
     // Autres méthodes
     public function getType(): string
     {
-        return 'Post';
+        // Retourne le nom de la classe sans le namespace
+        return (new \ReflectionClass($this))->getShortName();
     }
 
     public function __toString()

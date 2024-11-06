@@ -81,7 +81,7 @@ class PostRepository extends ServiceEntityRepository
         );
     }
 
-    public function FindPostIdWithReaction(array|SlidingPagination $posts, User $user) : array
+    public function findPostIdWithReaction(array|SlidingPagination $posts, User $user) : array
     {
         // Si $posts est une instance de SlidingPagination, extraire les éléments
         if ($posts instanceof SlidingPagination) {
@@ -101,5 +101,5 @@ class PostRepository extends ServiceEntityRepository
         }
 
         return $postReactions;
-    }    
+    }
 }

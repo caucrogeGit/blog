@@ -38,7 +38,15 @@ class Reaction
 
     #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'reactions')]
     #[ORM\JoinColumn(name: 'user_uuid', referencedColumnName: 'uuid', nullable: false)]
-    private User $user;
+    private ?User $user;
+
+    // Constructor
+    public function __construct()
+    {
+        $this->createdAt = new DateTimeImmutable();
+        $this->avis = DecisionEnum::AUCUNE;
+        $this->moderation = DecisionEnum::APPROUVE;
+    }    
     
     // Lifecycle Callbacks
     #[ORM\PrePersist]
@@ -148,7 +156,7 @@ class Reaction
         return $this->user;
     }
 
-    public function setUser(User $user): static
+    public function setUser(?User $user): static
     {
         $this->user = $user;
 

@@ -5,10 +5,9 @@ namespace App\Trait;
 use DateTimeImmutable;
 use Cocur\Slugify\Slugify;
 use Doctrine\ORM\Mapping as ORM;
-use Doctrine\Common\Collections\ArrayCollection;
 use Symfony\Component\Validator\Constraints as Assert;
 
-trait CategoryTagEntityTrait
+trait BaseEntityTrait
 {
     // Properties
     #[ORM\Id]
@@ -17,26 +16,45 @@ trait CategoryTagEntityTrait
     private ?int $id = null;
 
     #[ORM\Column(type: 'string', length: 255, unique: true)]
-    #[Assert\NotBlank()]
+    #[Assert\NotBlank(message: 'Le nom ne peut pas être vide.')]
+    #[Assert\Length(
+        min: 2,
+        max: 100,
+        minMessage: 'Le nom doit contenir au moins {{ limit }} caractères.',
+        maxMessage: 'Le nom ne peut pas dépasser {{ limit }} caractères.'
+    )]
+    #[Assert\Regex(
+        pattern: '/^[a-zA-ZÀ-ÖØ-öø-ÿ\s]+$/',
+        message: 'Le nom ne peut contenir que des lettres et des espaces.'
+    )]
     private string $name;
 
     #[ORM\Column(type: 'string', length: 255, unique: true)]
-    #[Assert\NotBlank()]
+    #[Assert\NotBlank(message: 'Le slug ne peut pas être vide.')]
+    #[Assert\Regex(
+        pattern: '/^[a-z0-9]+(?:-[a-z0-9]+)*$/',
+        message: 'Le slug ne doit contenir que des lettres minuscules, des chiffres et des tirets.'
+    )]
     private string $slug;
 
-    #[ORM\Column(type: 'text', length: 255, nullable: true)]
+    #[ORM\Column(type: 'text', nullable: true)]
+    #[Assert\Length(
+        max: 500,
+        maxMessage: 'La description ne peut pas dépasser {{ limit }} caractères.'
+    )]
+    #[Assert\Type(type: 'string', message: 'La description doit être une chaîne de caractères.')]
     private ?string $description;
 
     #[ORM\Column(type: 'datetime_immutable')]
-    #[Assert\NotNull()]
-    private DateTimeImmutable $createdAt;    
+    #[Assert\NotNull(message: 'La date de création doit être définie.')]
+    #[Assert\Type(type: DateTimeImmutable::class, message: 'La date de création doit être de type DateTimeImmutable.')]
+    private DateTimeImmutable $createdAt; 
 
     // Constructor
-    public function __construct()
+    private function traitConstructor()
     {
         $this->createdAt = new DateTimeImmutable();
-        $this->posts = new ArrayCollection();
-    }  
+    }
 
     // Méthodes evenementielles
     #[ORM\PrePersist]
@@ -69,13 +87,6 @@ trait CategoryTagEntityTrait
         return $this->slug;
     }
 
-    public function setSlug(String $slug) : self
-    {
-        $this->slug = $slug;
-
-        return $this;
-    }
-
     public function getDescription() : string
     {
         return $this->description;
@@ -98,6 +109,12 @@ trait CategoryTagEntityTrait
         $this->createdAt = $createdAt;
 
         return $this;
+    }
+
+    public function getType(): string
+    {
+        // Retourne le nom de la classe sans le namespace
+        return (new \ReflectionClass($this))->getShortName();
     }
 
     // Méthode magique __toString
