@@ -33,10 +33,10 @@ class TagFixtures extends Fixture
             $tag = new Tag();
 
             // Génération d'un nom de tag unique
-            $tag->setName("t-" . uniqid() . ' ' . $faker->words(1, true));
+            $tag->setLabel("t-" . uniqid() . ' ' . $faker->words(1, true));
 
             // Description aléatoire ou null
-            $tag->setDescription($faker->boolean(80) ? $faker->realText(200) : null);
+            $tag->setDescription($faker->realText(200));
 
             // Initialiser createdAt si nécessaire
             $tag->setCreatedAt(DateTimeImmutable::createFromMutable($faker->dateTimeBetween('-1 years', 'now')));

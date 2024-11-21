@@ -3,14 +3,14 @@
 namespace App\Entity;
 
 use App\Entity\Tag;
+use App\Trait\DateTrait;
+use App\Trait\SlugTrait;
+use App\Trait\CommonMethodsEntityTrait;
 use App\enum\EtatEnum;
-use DateTimeImmutable;
+
 use App\Entity\Thumbnail;
-use App\enum\DecisionEnum;
-use Cocur\Slugify\Slugify;
-use Doctrine\ORM\Mapping as ORM;
 use App\Repository\PostRepository;
-use App\Repository\ReactionRepository;
+use Doctrine\ORM\Mapping as ORM;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -19,86 +19,56 @@ use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 
 #[ORM\Entity(repositoryClass: PostRepository::class)]
 #[ORM\HasLifecycleCallbacks]
-#[UniqueEntity('title', message: 'Ce titre est déjà utilisé.')]
+#[UniqueEntity('title', message: 'category.titre.already_use')]
 class Post
 {
+    // Traits
+    use DateTrait;
+    use SlugTrait;
+    use CommonMethodsEntityTrait;
+
     // Propriétés
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
     private ?int $id = null;
 
+    #[ORM\Column(type:'string', length: 2024)]
     #[Assert\Length(
-        min: 5,
-        max: 255,
-        minMessage: 'Le titre doit comporter au moins {{ limit }} caractères.',
-        maxMessage: 'Le titre ne peut pas dépasser {{ limit }} caractères.'
-    )]
-    private string $title;  
-    
-    #[ORM\Column(type:'string', length:255, unique:true)]
-    #[Assert\NotBlank()]
-    private string $slug;  
-
-    #[Assert\Length(
-        min: 20,
-        max: 2000,
-        minMessage: 'Le contenu doit comporter au moins {{ limit }} caractères.',
-        maxMessage: 'Le contenu ne peut pas dépasser {{ limit }} caractères.'
+        min: 3,
+        max: 512,
+        message: "post.content.length.error {{ min }} et {{ max }}",
     )]
     private string $content;
     
     private ?Thumbnail $thumbnail = null; 
 
-    #[ORM\Column(type:'string', enumType: EtatEnum::class, options: ['default' => EtatEnum::BROUILLON])]
+    #[ORM\Column(type:'string', enumType: EtatEnum::class)]
     #[Assert\NotBlank()]
-    private EtatEnum $state;
+    private EtatEnum $etat;
 
-    #[ORM\Column(type:'datetime_immutable', length:255)]
-    #[Assert\NotNull()]
-    private DateTimeImmutable $updatedAt; 
-
-    #[ORM\Column(type:'datetime_immutable', length:255)]
-    #[Assert\NotNull()]
-    private DateTimeImmutable $createdAt;  
-
-    // Relationships
+    // Relationships ManyToMany
     #[ORM\ManyToMany(targetEntity: Category::class, mappedBy: 'posts')]
-    private ?Collection $categories = null;
+    private Collection $categories;
 
     #[ORM\ManyToMany(targetEntity: Tag::class, mappedBy: 'posts')]
-    private ?Collection $tags = null;
+    private Collection $tags;
 
-    #[ORM\OneToMany(targetEntity: Reaction::class, mappedBy: 'post', cascade: ['persist', 'remove'])]
-    private ?Collection $reactions = null;
-
+    // Relationships ManyToOne
     #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'posts')]
     #[ORM\JoinColumn(name: 'user_uuid', referencedColumnName: 'uuid', nullable: false)]
     private ?User $user = null;
 
+    // Relationships OneToMany
+    #[ORM\OneToMany(targetEntity: Reaction::class, mappedBy: 'post', cascade: ['persist', 'remove'])]
+    private ?Collection $reactions;
+
     // Constructeur
     public function __construct(){
-        $this->updatedAt = new DateTimeImmutable();
-        $this->createdAt = new DateTimeImmutable();
         $this->categories = new ArrayCollection();
         $this->tags = new ArrayCollection();
         $this->reactions = new ArrayCollection();
-        $this->state = EtatEnum::BROUILLON;
-    }
-
-    // Méthodes evenementielles
-    #[ORM\PrePersist]
-    public function prePersist()
-    {
-        $this->createdAt = new DateTimeImmutable();
-        $this->updatedAt = new DateTimeImmutable();
-        $this->slug = (new Slugify())->slugify($this->title);
-    }
-
-    #[ORM\PreUpdate]
-    public function preUpdate()
-    {
-        $this->updatedAt = new DateTimeImmutable();
+        $this->etat = EtatEnum::getDefaultEtat();
     }
 
     /* Méthodes relationnelles */
@@ -159,38 +129,29 @@ class Post
 
     public function addReaction(Reaction $reaction): static
     {
-        if(!$this->reactions->contains($reaction)) {
-            $this->reactions[] = $reaction;
-            $reaction->setPost($this);
+        if (!$this->reactions->contains($reaction)) {
+            $this->reactions->add($reaction);
+            if ($reaction->getPost() !== $this) {
+                $reaction->setPost($this);
+            }
+        } else {
+            throw new \LogicException('categorie.post.already_associated');
         }
-
+    
         return $this;
     }
 
-    public function removeReaction(Reaction $reaction, EntityManagerInterface $entityManager): static
+    public function removeReaction(Reaction $reaction): static
     {
-        if ($this->reactions->contains($reaction)) {
-            $this->reactions->removeElement($reaction);
-            $entityManager->remove($reaction); // Supprime l'entité Reaction de la base de données
-            $entityManager->flush(); // Applique la suppression en base de données
+        if ($this->reactions->removeElement($reaction)) {
+            if ($reaction->getPost() === $this) {
+                $reaction->setPost(null);
+            }
+        } else {
+            throw new \LogicException('categorie.post.not_associated');
         }
-
+    
         return $this;
-    }
-
-    public function isReactionAucune(Reaction $reaction):bool
-    {
-        return $reaction->getAvis() ==  DecisionEnum::AUCUNE;
-    }
-
-    public function isReactionApprouve(Reaction $reaction):bool
-    {
-        return $reaction->getAvis() ==  DecisionEnum::APPROUVE;
-    }
-
-    public function isReactionRejete(Reaction $reaction):bool
-    {
-        return $reaction->getAvis() ==  DecisionEnum::REJETE;
     }
 
     // (Posts->User) ManyToOne
@@ -210,30 +171,6 @@ class Post
     public function getId(): ?int
     {
         return $this->id;
-    }
-
-    public function getTitle():string
-    {
-        return $this->title;
-    }
-
-    public function setTitle(string $title):static
-    {
-        $this->title = $title;
-
-        return $this;
-    }
-
-    public function getSlug():string
-    {
-        return $this->slug;
-    }
-
-    public function setSlug($slug):static
-    {
-        $this->slug = $slug;
-
-        return $this;
     }
 
     public function getContent():string
@@ -260,51 +197,21 @@ class Post
         return $this;
     }    
 
-    public function getState():EtatEnum
+    public function getEtat():EtatEnum
     {
-        return $this->state;
+        return $this->etat;
     }
 
-    public function setState(EtatEnum $state):static
+    public function setEtat(EtatEnum $etat):static
     {
-        $this->state = $state;
-
-        return $this;
-    }
-
-    public function getUpdatedAt():DateTimeImmutable
-    {
-        return $this->updatedAt;
-    }
-
-    public function setUpdatedAt(DateTimeImmutable $updatedAt):static
-    {
-        $this->updatedAt = $updatedAt;
-
-        return $this;
-    }
-
-    public function getCreatedAt():DateTimeImmutable
-    {
-        return $this->createdAt;
-    }
-
-    public function setCreatedAt(DateTimeImmutable $createdAt):static
-    {
-        $this->createdAt = $createdAt;
+        $this->etat = $etat;
 
         return $this;
     }
 
     // Autres méthodes
-    public function getType(): string
+    public function isEtat(EtatEnum $etat): bool
     {
-        // Retourne le nom de la classe sans le namespace
-        return (new \ReflectionClass($this))->getShortName();
-    }
-
-    public function __toString()
-    {
-        return $this->title;
+        return $this->etat === $etat;
     }
 }

@@ -10,7 +10,7 @@ use Doctrine\Migrations\AbstractMigration;
 /**
  * Auto-generated Migration: Please modify to your needs!
  */
-final class Version20241105222326 extends AbstractMigration
+final class Version20241120223542 extends AbstractMigration
 {
     public function getDescription(): string
     {
@@ -25,31 +25,32 @@ final class Version20241105222326 extends AbstractMigration
         $this->addSql('CREATE SEQUENCE reaction_id_seq INCREMENT BY 1 MINVALUE 1 START 1');
         $this->addSql('CREATE SEQUENCE tag_id_seq INCREMENT BY 1 MINVALUE 1 START 1');
         $this->addSql('CREATE SEQUENCE thumbnail_id_seq INCREMENT BY 1 MINVALUE 1 START 1');
-        $this->addSql('CREATE TABLE category (id INT NOT NULL, name VARCHAR(255) NOT NULL, slug VARCHAR(255) NOT NULL, description TEXT DEFAULT NULL, created_at TIMESTAMP(0) WITHOUT TIME ZONE NOT NULL, PRIMARY KEY(id))');
-        $this->addSql('CREATE UNIQUE INDEX UNIQ_64C19C15E237E06 ON category (name)');
+        $this->addSql('CREATE TABLE category (id INT NOT NULL, description TEXT DEFAULT NULL, label VARCHAR(255) NOT NULL, slug VARCHAR(255) NOT NULL, created_at TIMESTAMP(0) WITHOUT TIME ZONE NOT NULL, updated_at TIMESTAMP(0) WITHOUT TIME ZONE DEFAULT NULL, PRIMARY KEY(id))');
+        $this->addSql('CREATE UNIQUE INDEX UNIQ_64C19C1EA750E8 ON category (label)');
         $this->addSql('CREATE UNIQUE INDEX UNIQ_64C19C1989D9B62 ON category (slug)');
         $this->addSql('COMMENT ON COLUMN category.created_at IS \'(DC2Type:datetime_immutable)\'');
+        $this->addSql('COMMENT ON COLUMN category.updated_at IS \'(DC2Type:datetime_immutable)\'');
         $this->addSql('CREATE TABLE categories_posts (category_id INT NOT NULL, post_id INT NOT NULL, PRIMARY KEY(category_id, post_id))');
         $this->addSql('CREATE INDEX IDX_8C5EAFB712469DE2 ON categories_posts (category_id)');
         $this->addSql('CREATE INDEX IDX_8C5EAFB74B89032C ON categories_posts (post_id)');
-        $this->addSql('CREATE TABLE post (id INT NOT NULL, user_uuid UUID NOT NULL, title VARCHAR(255) NOT NULL, slug VARCHAR(255) NOT NULL, content TEXT NOT NULL, state VARCHAR(255) DEFAULT \'BROUILLON\' NOT NULL, updated_at TIMESTAMP(0) WITHOUT TIME ZONE NOT NULL, created_at TIMESTAMP(0) WITHOUT TIME ZONE NOT NULL, PRIMARY KEY(id))');
-        $this->addSql('CREATE UNIQUE INDEX UNIQ_5A8A6C8D2B36786B ON post (title)');
+        $this->addSql('CREATE TABLE post (id INT NOT NULL, user_uuid UUID NOT NULL, content VARCHAR(512) NOT NULL, etat VARCHAR(255) NOT NULL, created_at TIMESTAMP(0) WITHOUT TIME ZONE NOT NULL, updated_at TIMESTAMP(0) WITHOUT TIME ZONE DEFAULT NULL, label VARCHAR(255) NOT NULL, slug VARCHAR(255) NOT NULL, PRIMARY KEY(id))');
+        $this->addSql('CREATE UNIQUE INDEX UNIQ_5A8A6C8DEA750E8 ON post (label)');
         $this->addSql('CREATE UNIQUE INDEX UNIQ_5A8A6C8D989D9B62 ON post (slug)');
-        $this->addSql('CREATE UNIQUE INDEX UNIQ_5A8A6C8DFEC530A9 ON post (content)');
         $this->addSql('CREATE INDEX IDX_5A8A6C8DABFE1C6F ON post (user_uuid)');
         $this->addSql('COMMENT ON COLUMN post.user_uuid IS \'(DC2Type:uuid)\'');
-        $this->addSql('COMMENT ON COLUMN post.updated_at IS \'(DC2Type:datetime_immutable)\'');
         $this->addSql('COMMENT ON COLUMN post.created_at IS \'(DC2Type:datetime_immutable)\'');
+        $this->addSql('COMMENT ON COLUMN post.updated_at IS \'(DC2Type:datetime_immutable)\'');
         $this->addSql('CREATE TABLE reaction (id INT NOT NULL, post_id INT DEFAULT NULL, user_uuid UUID NOT NULL, created_at TIMESTAMP(0) WITHOUT TIME ZONE NOT NULL, updated_at TIMESTAMP(0) WITHOUT TIME ZONE DEFAULT NULL, avis VARCHAR(255) DEFAULT \'AUCUNE\' NOT NULL, moderation VARCHAR(255) DEFAULT \'APPROUVE\' NOT NULL, ip_address VARCHAR(45) DEFAULT NULL, PRIMARY KEY(id))');
         $this->addSql('CREATE INDEX IDX_A4D707F74B89032C ON reaction (post_id)');
         $this->addSql('CREATE INDEX IDX_A4D707F7ABFE1C6F ON reaction (user_uuid)');
         $this->addSql('COMMENT ON COLUMN reaction.user_uuid IS \'(DC2Type:uuid)\'');
         $this->addSql('COMMENT ON COLUMN reaction.created_at IS \'(DC2Type:datetime_immutable)\'');
         $this->addSql('COMMENT ON COLUMN reaction.updated_at IS \'(DC2Type:datetime_immutable)\'');
-        $this->addSql('CREATE TABLE tag (id INT NOT NULL, name VARCHAR(255) NOT NULL, slug VARCHAR(255) NOT NULL, description TEXT DEFAULT NULL, created_at TIMESTAMP(0) WITHOUT TIME ZONE NOT NULL, PRIMARY KEY(id))');
-        $this->addSql('CREATE UNIQUE INDEX UNIQ_389B7835E237E06 ON tag (name)');
+        $this->addSql('CREATE TABLE tag (id INT NOT NULL, description TEXT DEFAULT NULL, label VARCHAR(255) NOT NULL, slug VARCHAR(255) NOT NULL, created_at TIMESTAMP(0) WITHOUT TIME ZONE NOT NULL, updated_at TIMESTAMP(0) WITHOUT TIME ZONE DEFAULT NULL, PRIMARY KEY(id))');
+        $this->addSql('CREATE UNIQUE INDEX UNIQ_389B783EA750E8 ON tag (label)');
         $this->addSql('CREATE UNIQUE INDEX UNIQ_389B783989D9B62 ON tag (slug)');
         $this->addSql('COMMENT ON COLUMN tag.created_at IS \'(DC2Type:datetime_immutable)\'');
+        $this->addSql('COMMENT ON COLUMN tag.updated_at IS \'(DC2Type:datetime_immutable)\'');
         $this->addSql('CREATE TABLE tags_posts (tag_id INT NOT NULL, post_id INT NOT NULL, PRIMARY KEY(tag_id, post_id))');
         $this->addSql('CREATE INDEX IDX_E3394CA2BAD26311 ON tags_posts (tag_id)');
         $this->addSql('CREATE INDEX IDX_E3394CA24B89032C ON tags_posts (post_id)');
@@ -58,7 +59,7 @@ final class Version20241105222326 extends AbstractMigration
         $this->addSql('CREATE UNIQUE INDEX UNIQ_C35726E68B8E8428 ON thumbnail (created_at)');
         $this->addSql('COMMENT ON COLUMN thumbnail.updated_at IS \'(DC2Type:datetime_immutable)\'');
         $this->addSql('COMMENT ON COLUMN thumbnail.created_at IS \'(DC2Type:datetime_immutable)\'');
-        $this->addSql('CREATE TABLE "user" (uuid UUID NOT NULL, email VARCHAR(255) NOT NULL, first_name VARCHAR(255) DEFAULT NULL, last_name VARCHAR(255) DEFAULT NULL, roles JSON NOT NULL, password VARCHAR(255) NOT NULL, avatar VARCHAR(512) DEFAULT NULL, created_at TIMESTAMP(0) WITHOUT TIME ZONE NOT NULL, updated_at TIMESTAMP(0) WITHOUT TIME ZONE NOT NULL, logs JSON NOT NULL, state VARCHAR(255) DEFAULT \'APPROUVE\' NOT NULL, PRIMARY KEY(uuid))');
+        $this->addSql('CREATE TABLE "user" (uuid UUID NOT NULL, email VARCHAR(255) NOT NULL, first_name VARCHAR(255) DEFAULT NULL, last_name VARCHAR(255) DEFAULT NULL, roles JSON NOT NULL, password VARCHAR(255) NOT NULL, avatar VARCHAR(512) DEFAULT NULL, etat VARCHAR(255) DEFAULT \'AUCUNE\' NOT NULL, created_at TIMESTAMP(0) WITHOUT TIME ZONE NOT NULL, updated_at TIMESTAMP(0) WITHOUT TIME ZONE DEFAULT NULL, PRIMARY KEY(uuid))');
         $this->addSql('CREATE UNIQUE INDEX UNIQ_8D93D649E7927C74 ON "user" (email)');
         $this->addSql('COMMENT ON COLUMN "user".uuid IS \'(DC2Type:uuid)\'');
         $this->addSql('COMMENT ON COLUMN "user".created_at IS \'(DC2Type:datetime_immutable)\'');

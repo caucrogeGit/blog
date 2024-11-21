@@ -4,6 +4,7 @@ namespace App\DataFixtures;
 
 use Faker\Factory;
 use App\Entity\User;
+use App\enum\DecisionEnum;
 use Doctrine\Persistence\ObjectManager;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
@@ -31,11 +32,11 @@ class UserFixtures extends Fixture
         $adminUser->setEmail('caucroge@gmail.com');
         $adminUser->setFirstName('Roger');
         $adminUser->setLastName('CAUCHON');
-        $adminUser->setRoles(['ROLE_ADMIN']);
-        $adminUser->setCreationMessage(); // Utilisation de la constante de création
+        $adminUser->setRoles(['ROLE_USER','ROLE_ADMIN']);
         $adminUser->setPassword(
             $this->passwordHasher->hashPassword($adminUser, 'password123!')
         );
+        $adminUser->setEtat(DecisionEnum::APPROUVE);
 
         $manager->persist($adminUser);
 
@@ -46,7 +47,7 @@ class UserFixtures extends Fixture
             $user->setFirstName($faker->firstName);
             $user->setLastName($faker->lastName);
             $user->setRoles(['ROLE_USER']);
-            $user->setCreationMessage(); // Utilise le message de création par défaut
+            $user->setEtat(DecisionEnum::APPROUVE);
 
             // Génération d'un mot de passe aléatoire répondant aux exigences de sécurité
             $plainPassword = 'User' . $i . '!Pass123';

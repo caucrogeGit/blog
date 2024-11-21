@@ -2,8 +2,12 @@
 
 namespace App\Entity;
 
-use DateTimeImmutable;
+use App\Entity\Post;
+use App\Trait\DateTrait;
+use App\Trait\CommonMethodsEntityTrait;
+use App\enum\RoleEnum;
 use App\enum\DecisionEnum;
+
 use Symfony\Component\Uid\Uuid;
 use Doctrine\ORM\Mapping as ORM;
 use App\Repository\UserRepository;
@@ -17,15 +21,14 @@ use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\Table(name: '`user`')]
-#[UniqueEntity(fields: ['email'], message: 'Cette email est déjà utilisé.')]
+#[UniqueEntity(fields: ['email'], message: 'user.email.unique.error')]
 #[ORM\HasLifecycleCallbacks]
 
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
-    // Constantes
-    public const MESSAGE_CREATION = 'Création du compte';
-    public const MESSAGE_UPDATE = 'Mise à jour du compte';
-    public const MESSAGE_PASSWORD_RESET = 'Réinitialisation du mot de passe';
+    // Traits
+    use DateTrait;
+    use CommonMethodsEntityTrait;
 
     // Properties
     #[ORM\Id]
@@ -43,12 +46,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[Assert\Length(
         min: 2,
         max: 25,
-        minMessage: 'Le prénom doit contenir au moins {{ limit }} caractères.',
-        maxMessage: 'Le prénom ne peut pas dépasser {{ limit }} caractères.'
+        message: 'user.first_name.length.error' . '{{ min }} et {{ max }}',
     )]
     #[Assert\Regex(
         pattern: '/^[a-zA-ZÀ-ÖØ-öø-ÿ]+$/',
-        message: 'Le prénom ne peut contenir que des lettres.'
+        message: 'user.first_name.content.error'
     )]
     private ?string $firstName = null; 
 
@@ -56,12 +58,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[Assert\Length(
         min: 2,
         max: 25,
-        minMessage: 'Le nom de famille doit contenir au moins {{ limit }} caractères.',
-        maxMessage: 'Le nom de famille ne peut pas dépasser {{ limit }} caractères.'
+        message: 'user.last_name.length.error' . '{{ min }} et {{ max }}',
     )]
     #[Assert\Regex(
         pattern: '/^[a-zA-ZÀ-ÖØ-öø-ÿ]+$/',
-        message: 'Le nom de famille ne peut contenir que des lettres.'
+        message: 'user.first_name.content.error'
     )]
     private ?string $lastName = null; 
 
@@ -69,19 +70,20 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[Assert\NotBlank()]
     #[Assert\All([
         new Assert\Choice(
-            choices: ['ROLE_USER', 'ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_EDITOR'],
-            message: 'Le rôle {{ value }} n’est pas valide.'
+            choices: RoleEnum::CHOICES,
+            message: 'role.error : ' .'{{ value }}'
         )
     ])]
     private array $roles = [];
 
     #[Assert\Length(
         min: 8,
-        minMessage: 'Le mot de passe doit contenir au moins {{ limit }} caractères.'
+        max: 255,
+        minMessage: 'user.password.length.error' .'{{ min }} et {{ max }}',
     )]
     #[Assert\Regex(
         pattern: '/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/',
-        message: 'Le mot de passe doit contenir au moins une lettre majuscule, une lettre minuscule, un chiffre et un caractère spécial.'
+        message: 'user.password.content.error'
     )]
     private ?string $plainPassword = null;
 
@@ -91,35 +93,14 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(type: 'string', length: 512, nullable: true)]
     #[Assert\NotBlank()]
-    #[Assert\Url(message: 'L’URL de l’avatar n’est pas valide.')]
-    #[Assert\NotBlank(message: 'L’URL de l’avatar ne peut pas être vide.')]
+    #[Assert\Url(message: 'user.avatar.url.error')]
+    #[Assert\NotBlank(message: 'user.avatar.empty.error')]
     private ?string $avatar = null;
 
-    #[ORM\Column(type: 'datetime_immutable')]
+    #[ORM\Column(type: 'string', enumType: DecisionEnum::class, options: ['default' => DecisionEnum::DEFAULT])]
     #[Assert\NotNull()]
-    private DateTimeImmutable $createdAt;
-
-    #[ORM\Column(type: 'datetime_immutable')]
-    #[Assert\NotNull()]
-    private DateTimeImmutable $updatedAt;
-
-    #[ORM\Column(type: 'json')]
-    #[Assert\NotNull()]
-    #[Assert\All([
-        new Assert\Collection([
-            'date' => new Assert\DateTime(['message' => 'La date du log n’est pas valide.']),
-            'message' => new Assert\NotBlank(['message' => 'Le message du log ne peut pas être vide.']),
-        ])
-    ])]
-    private array $logs = [];
-
-    #[ORM\Column(type: 'string', enumType: DecisionEnum::class, options: ['default' => DecisionEnum::APPROUVE])]
-    #[Assert\NotNull()]
-    #[Assert\Type(type: DecisionEnum::class, message: 'L’état doit être une instance de DecisionEnum.')]
-    private DecisionEnum $state;
-
-    #[Assert\NotNull()]
-    private ?string $message = null;
+    #[Assert\Type(type: DecisionEnum::class, message: 'user.etat.error')]
+    private DecisionEnum $etat;
 
     // Relationships
     #[ORM\OneToMany(targetEntity: Reaction::class, mappedBy: 'user', cascade: ['persist', 'remove'])]
@@ -130,31 +111,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     // Constructeur
     public function __construct(){
-        $this->roles = ['ROLE_USER'];
-        $this->updatedAt = new DateTimeImmutable();
-        $this->createdAt = new DateTimeImmutable();
-        $this->message = $this->setCreationMessage();
+        $this->roles = RoleEnum::getDefaultRole();
+        $this->etat = DecisionEnum::getDefaultDecision();
         $this->reactions = new ArrayCollection();
         $this->posts = new ArrayCollection();
-        $this->state = DecisionEnum::APPROUVE;
+
     }
 
     // Méthodes evenementielles
     #[ORM\PrePersist]
     public function prePersist()
     {
-        $this->createdAt = new DateTimeImmutable();
-        $this->updatedAt = new DateTimeImmutable();
-        $this->logs = [['date' => $this->createdAt->format('Y-m-d H:i:s'), 'message' => $this->message]];
         $this->avatar = 'https://api.dicebear.com/9.x/' .$this->getAvatarStyle() .'/svg?seed='.$this->firstName.' '.$this->lastName;
-    }
-
-    #[ORM\PreUpdate]
-    public function preUpdate()
-    {
-        $this->updatedAt = new DateTimeImmutable();
-        if($this->message)
-            $this->logs[] = ['date' => $this->updatedAt->format('Y-m-d H:i:s'), 'message' => $this->message];
     }
 
     /** Méthodes relationnelles **/
@@ -167,22 +135,43 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function addReactions(Reaction $reaction): static
     {
-        if (!$this->reactions->contains($reaction)) {
-            $this->reactions[] = $reaction;
-            $reaction->setUser($this);
+        try {
+            // Vérifie si la réaction est déjà associée à l'utilisateur
+            if (!$this->reactions->contains($reaction)) {
+                $this->reactions[] = $reaction;
+    
+                // Associe l'utilisateur à la réaction dans la relation bidirectionnelle
+                if ($reaction->getUser() !== $this) {
+                    $reaction->setUser($this);
+                }
+            } else {
+                throw new \LogicException('user.reaction.already_associated' . $this->email);
+            }
+        } catch (\Exception $e) {
+            // Gestion de l'erreur
+            throw new \RuntimeException('user.reaction.add.error' . $e->getMessage(), 0, $e);
         }
-
+    
         return $this;
     }
 
     public function removeReaction(Reaction $reaction): static
     {
-        if ($this->reactions->removeElement($reaction)) {
-            if ($reaction->getUser() === $this) {
-                $reaction->setUser(null);
+        try {
+            // Vérifie si la réaction est bien associée à l'utilisateur
+            if ($this->reactions->removeElement($reaction)) {
+                // Vérifie si l'utilisateur est toujours lié à la réaction et annule cette association
+                if ($reaction->getUser() === $this) {
+                    $reaction->setUser(null);
+                }
+            } else {
+                throw new \LogicException('user.reaction.not_associated' .$this->email);
             }
+        } catch (\Exception $e) {
+            // Gestion de l'erreur
+            throw new \RuntimeException('user.reaction.remove.error' . $e->getMessage(), 0, $e);
         }
-
+    
         return $this;
     }
 
@@ -194,22 +183,43 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function addPost(Post $post): static
     {
-        if (!$this->posts->contains($post)) {
-            $this->posts[] = $post;
-            $post->setUser($this);
+        try {
+            // Vérifie si le post est déjà associé à l'utilisateur
+            if (!$this->posts->contains($post)) {
+                $this->posts[] = $post;
+    
+                // Associe l'utilisateur au post dans la relation bidirectionnelle
+                if ($post->getUser() !== $this) {
+                    $post->setUser($this);
+                }
+            } else {
+                throw new \LogicException('user.post.already_associated' .$this->email);
+            }
+        } catch (\Exception $e) {
+            // Gestion de l'erreur
+            throw new \RuntimeException('user.post.add.error' . $e->getMessage(), 0, $e);
         }
-
+    
         return $this;
     }
 
     public function removePost(Post $post): static
     {
-        if ($this->posts->removeElement($post)) {
-            if ($post->getUser() === $this) {
-                $post->setUser(null);
+        try {
+            // Vérifie si le post est bien associé à l'utilisateur
+            if ($this->posts->removeElement($post)) {
+                // Vérifie si l'utilisateur est toujours lié au post et annule cette association
+                if ($post->getUser() === $this) {
+                    $post->setUser(null);
+                }
+            } else {
+                throw new \LogicException('user.post.not_associated' .$this->email);
             }
+        } catch (\Exception $e) {
+            // Gestion de l'erreur
+            throw new \RuntimeException('user.post.remove.error' . $e->getMessage(), 0, $e);
         }
-
+    
         return $this;
     }
 
@@ -262,14 +272,14 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    public function getState(): DecisionEnum
+    public function getEtat(): DecisionEnum
     {
-        return $this->state;
+        return $this->etat;
     }
 
-    public function setAvis(DecisionEnum $state): static
+    public function setEtat(DecisionEnum $etat): static
     {
-        $this->state = $state;
+        $this->etat = $etat;
 
         return $this;
     }
@@ -331,62 +341,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    public function getCreatedAt(): DateTimeImmutable
-    {
-        return $this->createdAt;
-    }
-
-    public function setCreatedAt($createdAt): static
-    {
-        $this->createdAt = $createdAt;
-
-        return $this;
-    }
-
-    public function getUpdatedAt(): DateTimeImmutable
-    {
-        return $this->updatedAt;
-    }
-
-    public function setUpdatedAt($updatedAt): static
-    {
-        $this->updatedAt = $updatedAt;
-
-        return $this;
-    }
-
-    public function getLogs(): array
-    {
-        return $this->logs;
-    }
-
-    public function setLogs($logs): static
-    {
-        $this->logs = $logs;
-
-        return $this;
-    }
-
-    public function getMessage(): ?string
-    {
-        return $this->message;
-    }
- 
-    public function setCreationMessage(): void
-    {
-        $this->message = self::MESSAGE_CREATION;
-    }
-    
-    public function setUpdateMessage(): void
-    {
-        $this->message = self::MESSAGE_UPDATE;
-    }
-    
-    public function setPasswordResetMessage(): void
-    {
-        $this->message = self::MESSAGE_PASSWORD_RESET;
-    }
-
     // Implémentation
     public function getRoles(): array
     {
@@ -404,12 +358,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     }
 
     public function getUserIdentifier(): string
-    {
-        return $this->email;
-    }
-
-    // Méthodes magiques
-    public function __toString(): string
     {
         return $this->email;
     }

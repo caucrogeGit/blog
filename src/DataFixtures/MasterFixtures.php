@@ -17,6 +17,10 @@ class MasterFixtures extends Fixture implements DependentFixtureInterface
     {
         return [
             UserFixtures::class,
+            CategoryFixtures::class,
+            TagFixtures::class,
+            PostFixtures::class,
+            ReactionFixtures::class,
         ];
     }
 }

@@ -1,4 +1,4 @@
-<?php
+<?php 
 
 namespace App\DataFixtures;
 
@@ -31,19 +31,18 @@ class CategoryFixtures extends Fixture
         for ($i = 0; $i < 10; $i++) {
             $category = new Category();
 
-            // Pour éviter les doublons, on concatène deux mots aléatoires
-            $category->setName($faker->words(1, true) . ' ' . $faker->words(1, true));
-
+            // Génération d'un nom unique pour éviter les collisions
+            $uniqueName = $faker->unique()->words(2, true) ?: 'Default Name';
+            $category->setLabel($uniqueName);
+       
             // Description aléatoire ou null
             $category->setDescription($faker->realText(254));
-
-            // Ajout de la catégorie au tableau $categories
-            $categories[] = $category;
 
             // Persistance de la catégorie
             $manager->persist($category);
         }
 
+        // Sauvegarde des données en base
         $manager->flush();
     }
 }

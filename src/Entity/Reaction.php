@@ -2,64 +2,66 @@
 
 namespace App\Entity;
 
+use App\Trait\CommonMethodsEntityTrait;
+use App\Trait\DateTrait;
 use App\enum\DecisionEnum;
+
 use Doctrine\ORM\Mapping as ORM;
 use App\Repository\ReactionRepository;
-use DateTimeImmutable;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: ReactionRepository::class)]
 #[ORM\HasLifecycleCallbacks]
 class Reaction
 {
+    use DateTrait;
+    use CommonMethodsEntityTrait;
+
     // Properties
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\Column(type: 'datetime_immutable')]
-    private DateTimeImmutable $createdAt;
-
-    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
-    private ?DateTimeImmutable $updatedAt = null;
-
-    #[ORM\Column(type: 'string', enumType: DecisionEnum::class, options: ['default' => DecisionEnum::AUCUNE])]
+    #[ORM\Column(type: 'string', enumType: DecisionEnum::class)]
+    #[Assert\Choice(callback: [DecisionEnum::class, 'getAllDecisions'], message: 'reaction.avis.error' .'{{ value }}')]
+    #[Assert\All([
+        new Assert\Choice(
+            choices: DecisionEnum::CHOICES,
+            message: 'decision.error : ' .'{{ value }}'
+        )
+    ])]
     private DecisionEnum $avis;
     
-    #[ORM\Column(type: 'string', enumType: DecisionEnum::class, options: ['default' => DecisionEnum::APPROUVE])]
+    #[ORM\Column(type: 'string', enumType: DecisionEnum::class)]
+    #[Assert\Choice(callback: [DecisionEnum::class, 'getAllDecisions'], message: 'reaction.moderation.error' .'{{ value }}')]
+    #[Assert\All([
+        new Assert\Choice(
+            choices: DecisionEnum::CHOICES,
+            message: 'decision.error : ' .'{{ value }}'
+        )
+    ])]
     private DecisionEnum $moderation;
 
-    #[ORM\Column(type: 'string', length: 45, nullable: true)]
-    private ?string $ipAddress;
+    #[ORM\Column(type: 'string', length: 45, nullable: false)]
+    #[Assert\Ip(message: 'reaction.ip_address.error')]
+    private string $ipAddress;
 
-    // Relationships
-    #[ORM\ManyToOne(targetEntity: Post::class, inversedBy: 'reactions')]
+    // Relationships ManyToOne
+    #[ORM\ManyToOne(targetEntity: Post::class, inversedBy: 'reactions', cascade: ['persist'])]
+    #[ORM\JoinColumn(nullable: false)]
     private Post $post;
 
-    #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'reactions')]
+    #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'reactions', cascade: ['persist'])]
     #[ORM\JoinColumn(name: 'user_uuid', referencedColumnName: 'uuid', nullable: false)]
-    private ?User $user;
+    private User $user;
 
     // Constructor
     public function __construct()
     {
-        $this->createdAt = new DateTimeImmutable();
-        $this->avis = DecisionEnum::AUCUNE;
-        $this->moderation = DecisionEnum::APPROUVE;
+        $this->avis = DecisionEnum::getDefaultDecision();
+        $this->moderation = DecisionEnum::getDefaultDecision();
     }    
-    
-    // Lifecycle Callbacks
-    #[ORM\PrePersist]
-    public function prePersist(): void
-    {
-        $this->createdAt = new DateTimeImmutable();
-    }
-
-    #[ORM\PreUpdate]
-    public function preUpdate(): void
-    {
-        $this->updatedAt = new DateTimeImmutable();
-    }
 
     // Getters and Setters
     public function getId(): ?int
@@ -75,30 +77,6 @@ class Reaction
     public function setType(DecisionEnum $avis): static
     {
         $this->avis = $avis;
-
-        return $this;
-    }
-
-    public function getCreatedAt(): DateTimeImmutable
-    {
-        return $this->createdAt;
-    }
-
-    public function setCreatedAt(DateTimeImmutable $createdAt): static
-    {
-        $this->createdAt = $createdAt;
-
-        return $this;
-    }
-
-    public function getUpdatedAt(): ?DateTimeImmutable
-    {
-        return $this->updatedAt;
-    }
-
-    public function setUpdatedAt(?DateTimeImmutable $updatedAt): static
-    {
-        $this->updatedAt = $updatedAt;
 
         return $this;
     }
@@ -127,12 +105,12 @@ class Reaction
         return $this;
     }
 
-    public function getIpAddress(): ?string
+    public function getIpAddress(): string
     {
         return $this->ipAddress;
     }
 
-    public function setIpAddress(?string $ipAddress): static
+    public function setIpAddress(string $ipAddress): static
     {
         $this->ipAddress = $ipAddress;
 
@@ -147,7 +125,7 @@ class Reaction
     public function setPost(Post $post): static
     {
         $this->post = $post;
-
+    
         return $this;
     }
 
@@ -156,10 +134,16 @@ class Reaction
         return $this->user;
     }
 
-    public function setUser(?User $user): static
+    public function setUser(User $user): static
     {
         $this->user = $user;
 
         return $this;
+    }
+
+    // Autres méthodes
+    public function isAvis(DecisionEnum $avis): bool
+    {
+        return $this->avis === $avis;
     }
 }
