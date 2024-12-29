@@ -50,11 +50,11 @@ class Reaction
     // Relationships ManyToOne
     #[ORM\ManyToOne(targetEntity: Post::class, inversedBy: 'reactions', cascade: ['persist'])]
     #[ORM\JoinColumn(nullable: false)]
-    private Post $post;
+    private ?Post $post = null;
 
     #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'reactions', cascade: ['persist'])]
     #[ORM\JoinColumn(name: 'user_uuid', referencedColumnName: 'uuid', nullable: false)]
-    private User $user;
+    private ?User $user = null;
 
     // Constructor
     public function __construct()
@@ -117,19 +117,29 @@ class Reaction
         return $this;
     }
 
-    public function getPost(): Post
+    public function getPost(): ?Post
     {
         return $this->post;
     }
 
-    public function setPost(Post $post): static
+    public function setPost(?Post $post): static
     {
-        $this->post = $post;
+        if ($this->post !== $post) {
+            if ($this->post !== null) {
+                $this->post->removeReaction($this);
+            }
+    
+            $this->post = $post;
+    
+            if ($post !== null && !$post->getReactions()->contains($this)) {
+                $post->addReaction($this);
+            }
+        }
     
         return $this;
     }
 
-    public function getUser(): User
+    public function getUser(): ?User
     {
         return $this->user;
     }

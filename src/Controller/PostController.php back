@@ -28,37 +28,59 @@ class PostController extends AbstractController
      */
     #[Route('/post', name: 'post.index', methods: ['GET'])]
     public function index(PostRepository $postRepository, 
-                        ReactionRepository $reactionRepository, 
-                        Request $request): Response
-    {
+                          ReactionRepository $reactionRepository, 
+                          Request $request): Response
+    {   
+        // Crée une nouvelle instance de SearchData pour stocker les données de recherche
         $searchData = new SearchData();
+        
+        // Crée le formulaire de recherche et le lie aux données de recherche
         $form = $this->createForm(SearchDataType::class, $searchData);
         $form->handleRequest($request);
 
-        if ($form->isSubmitted() && $form->isValid()) {
-            $posts = $postRepository->findBySearch($searchData);
-        } else {
-            $posts = $postRepository->findPublishedWithPaginator();
-        }
-       
-        // Récupérer les articles de la page courante
-        $currentPagePosts = $posts->getItems(); // Récupère les articles paginés de la page courante
+        /** Si le formulaire est soumis et valide, effectue la recherche **/
 
-        // Récupérer les likes et dislikes pour tous les articles
-        $nbLikeDislikeByPost = $reactionRepository->findNbLikeDislikeByPosts($currentPagePosts);
-        
-        // Identifier les ids des articles de l'utilisateur courant
-        $userPostIds = [];
-        if ($this->getUser()) {
-            
-            $userPostIds = $postRepository->findUserPostsOnCurrentPage($currentPagePosts, $this->getUser()); // Récupérer les IDs des posts de l'utilisateur connecté
-            $userPostIds = array_column($userPostIds, 'id'); // Simplifier le tableau ex: [0 => ['id' => 1], 1 => ['id' => 2]] => [1, 2]
+        if ($form->isSubmitted() && $form->isValid()) {
+
+            // Recherche les articles correspondant aux critères de recherche
+            $posts = $postRepository->findBySearch($searchData);
+
+            // Récupérer le nombre de réactions (APPROUVE OU REJETE) par post
+            $nbLikeDislikeByPost = $reactionRepository->findNbLikeDislikeByPost($posts);
+
+            // Vérifier si l'utilisateur est connecté avant de récupérer les réactions
+            $postReactions = [];
+            if ($this->getUser()) {
+                $postReactions = $postRepository->findPostIdWithReaction($posts, $this->getUser());
+            }
+
+            // Rend la vue avec les articles trouvés et le formulaire de recherche
+            return $this->render('pages/post/index.html.twig', [
+                'posts' => $posts,
+                'postReactions' => $postReactions,
+                'nbLikeDisLikeByPost' => $nbLikeDislikeByPost,
+                'form' => $form->createView(),
+            ]);
         }
-        
+
+        /** Si le formulaire n'est pas soumis ou n'est pas valide, affiche tous les articles publiés avec pagination **/
+
+        // Récupérer les post publiés avec pagination
+        $posts = $postRepository->findPublishedWithPaginator();
+
+        // Récupérer le nombre de réactions (APPROUVE OU REJETE) par post
+        $nbLikeDislikeByPost = $reactionRepository->findNbLikeDislikeByPost($posts);
+
+        // Recupère les réactions des posts de l'utilisateur connecté
+        $postReactions = [];
+        if ($this->getUser()) {
+            $postReactions = $postRepository->findPostIdWithReaction($posts, $this->getUser());
+        }
+
         return $this->render('pages/post/index.html.twig', [
-            'posts' => $posts,
+            'posts' => $postRepository->findPublishedWithPaginator(),
+            'postReactions' => $postReactions,
             'nbLikeDislikeByPost' => $nbLikeDislikeByPost,
-            'userPostIds' => $userPostIds,
             'form' => $form->createView(),
         ]);
     }

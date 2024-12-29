@@ -39,8 +39,8 @@ class PostRepository extends ServiceEntityRepository
     {
         // Création du QueryBuilder pour sélectionner les posts publiés
         $queryBuilder = $this->createQueryBuilder('post')
-                             ->where('post.state LIKE :state')
-                             ->setParameter('state', EtatEnum::PUBLIE)
+                             ->where('post.etat LIKE :etat')
+                             ->setParameter('etat', EtatEnum::PUBLIE)
                              ->orderBy('post.createdAt', 'DESC')
                              ->getQuery()
                              ->getResult();
@@ -60,8 +60,8 @@ class PostRepository extends ServiceEntityRepository
     {
         // Création du QueryBuilder pour sélectionner les posts publiés
         $queryBuilder = $this   ->createQueryBuilder('post')
-                                ->where('post.state LIKE :state')
-                                ->setParameter('state', EtatEnum::PUBLIE)
+                                ->where('post.etat LIKE :etat')
+                                ->setParameter('etat', EtatEnum::PUBLIE)
                                 ->orderBy('post.createdAt', 'DESC');
 
         // Ajout de la condition de recherche sur le titre si searchData.search est défini
@@ -101,5 +101,17 @@ class PostRepository extends ServiceEntityRepository
         }
 
         return $postReactions;
+    }
+
+    public function findUserPostsOnCurrentPage(array $currentPagePosts, $user): array
+    {
+        return $this->createQueryBuilder('p')
+            ->select('p.id') // Sélectionne uniquement l'identifiant
+            ->where('p.user = :user')
+            ->andWhere('p IN (:posts)')
+            ->setParameter('user', $user)
+            ->setParameter('posts', $currentPagePosts)
+            ->getQuery()
+            ->getScalarResult();
     }
 }

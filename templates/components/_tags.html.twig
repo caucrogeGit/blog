@@ -2,7 +2,7 @@
 {% if tags %}
 	{% for tag in tags %}
 		<span class="text-xs inline-block mr-2 mb-2 py-1 px-2.5 leading-none text-center whitespace-nowrap align-baseline font-bold bg-gray-400 text-white">
-			<a href="{{ path('tag.show', {'slug': tag.slug, 'returnTo': app.request.uri }) }}">{{ tag.name }}</a>
+			<a href="{{ path('tag.show', {'slug': tag.slug, 'returnTo': app.request.uri }) }}">{{ tag.label }}</a>
 		</span>
 	{% endfor %}
 	<a class="inline-block relative top-3" href="{{ path('tag.show', {slug: post.slug}) }}">

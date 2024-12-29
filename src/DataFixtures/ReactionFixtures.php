@@ -3,14 +3,11 @@
 namespace App\DataFixtures;
 
 use Faker\Factory;
-use App\Entity\Post;
-use App\Entity\User;
 use App\Entity\Reaction;
 use App\enum\DecisionEnum;
 use App\Repository\PostRepository;
 use App\Repository\UserRepository;
 use Doctrine\Persistence\ObjectManager;
-use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Common\DataFixtures\DependentFixtureInterface;
 
@@ -21,7 +18,7 @@ class ReactionFixtures extends Fixture implements DependentFixtureInterface
         private UserRepository $userRepository)
     {}
 
-    public function load(ObjectManager $manager)
+    public function load(ObjectManager $manager): void
 	{
         // Utilisation de Faker pour générer des données fictives en français
         $faker = Factory::create('fr_FR');
@@ -60,21 +57,16 @@ class ReactionFixtures extends Fixture implements DependentFixtureInterface
         
                     // Récupération d'une adresse IP aléatoire
                     $reaction->setIpAddress(mt_rand(0,1) ? $faker->ipv4 : $faker->ipv6);
-                    $reaction->setIpAddress(mt_rand(0,1) ? $faker->ipv4 : $faker->ipv6);
         
                     // Récupération d'un utilisateur aléatoire
                     $reaction->setUser($users[mt_rand(0, count($users) - 1)]);
         
                     // Ajout de la réaction au post
                     $post->addReaction($reaction);
-
-                    // Persistance de la réaction
-                    $manager->persist($reaction);
                 }
-                
-                // Persistance du post
-                $manager->persist($post);
 
+                // Persiste uniquement le Post (les réactions sont persistées en cascade)
+                $manager->persist($post);
             }
 
             $manager->flush();

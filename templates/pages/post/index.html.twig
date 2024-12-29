@@ -5,7 +5,7 @@
 {% block body %}
     <div class="container mx-auto">
         <h1 class="text-5xl text-center mt-12 mb-8">Articles</h1>
-        {% include 'components/_search_data.html.twig' with {'form': form} only %}
+        {% include 'components/_box_search_data.html.twig' with {'form': form} only %}
         <div class="flex flex-row flex-wrap justify-evenly mt-4">
             {% for post in posts %}
             <div class="card max-w-sm bg-white rounded-lg border border-gray-200 shadow-md dark:bg-gray-800 dark:border-gray-700 my-8 mr-4" data-type="post">
@@ -17,7 +17,7 @@
                 {% include 'components/_like.html.twig' with {'post': post} %}
                 <div class="p-3">
                     <a href="{{ path('post.show', {'slug': post.slug, 'returnTo': app.request.uri })  }}">
-                        <h5 class="mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">{{ post.title }}</h5>
+                        <h5 class="mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">{{ post.label }}</h5>
                     </a>
                     <div class="mb-1 mx-auto my-4 leading-6">                                          
                         {% include 'components/_category.html.twig' with {'tag_categories': post.categories} %}

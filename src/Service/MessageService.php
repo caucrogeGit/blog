@@ -42,6 +42,7 @@ class MessageService
         'reaction.avis.error' => 'L’avis à la réaction doit être une instance de DecisionEnum. Valeurs possibles : ',
         'reaction.moderation.error' => 'La moderation à la réaction doit être une instance de DecisionEnum. Valeurs possibles : ',
         'reaction.ip_address.error' => 'Adresse IP invalide.',
+        'reaction.post.reaffected.error' => 'Une réaction ne peut pas être réaffectée à un autre post.',
 
         // Messages pour Tag
         'tag.description.length.error' => 'La description est trop long. Nombre de caractères maximum : ',

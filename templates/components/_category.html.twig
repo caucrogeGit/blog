@@ -2,7 +2,7 @@
 {% if tag_categories %}
 	{% for tag_category in tag_categories %}
 		<span class="text-xs inline-block mr-2 mb-2 py-1 px-2.5 leading-none text-center whitespace-nowrap align-baseline font-bold bg-amber-900 text-white rounded-full">
-			<a href="{{ path('category.show', {'slug': tag_category.slug, 'returnTo': app.request.uri }) }}">{{ tag_category.name }}</a>
+			<a href="{{ path('category.show', {'slug': tag_category.slug, 'returnTo': app.request.uri }) }}">{{ tag_category.label }}</a>
 		</span>
 	{% endfor %}
 	<a class="inline-block relative top-3" href="{{ path('category.show', {slug: post.slug}) }}">

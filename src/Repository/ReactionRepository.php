@@ -47,10 +47,12 @@ class ReactionRepository extends ServiceEntityRepository
         ;
     }
 
-    public function findNbReactionsByPost(SlidingPagination $posts): array
+    public function findNbLikeDislikeByPosts(array $posts): array
     {
-        $postIds = array_map(fn($post) => $post->getId(), $posts->getItems());
-
+        // Extraire les IDs des posts
+        $postIds = array_map(fn($post) => is_object($post) ? $post->getId() : $post, $posts);
+        
+        // Requête pour récupérer les posts avec leurs réactions
         $datas = $this->createQueryBuilder('reaction')
             ->select('IDENTITY(reaction.post) AS postId')
             ->addSelect('SUM(CASE WHEN reaction.avis = :like THEN 1 ELSE 0 END) AS nbApprouve')
@@ -63,7 +65,16 @@ class ReactionRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
 
+        // Initialiser tous les posts avec des valeurs par défaut (0)
         $nbReactionsByPost = [];
+        foreach ($postIds as $postId) {
+            $nbReactionsByPost[$postId] = [
+                'nbApprouve' => 0,
+                'nbRejete' => 0,
+            ];
+        }
+        
+        // Mettre à jour les posts ayant des réactions
         foreach ($datas as $reaction) {
             $nbReactionsByPost[$reaction['postId']] = [
                 'nbApprouve' => $reaction['nbApprouve'],

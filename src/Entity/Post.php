@@ -11,7 +11,6 @@ use App\enum\EtatEnum;
 use App\Entity\Thumbnail;
 use App\Repository\PostRepository;
 use Doctrine\ORM\Mapping as ORM;
-use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\Collections\ArrayCollection;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -60,7 +59,7 @@ class Post
     private ?User $user = null;
 
     // Relationships OneToMany
-    #[ORM\OneToMany(targetEntity: Reaction::class, mappedBy: 'post', cascade: ['persist', 'remove'])]
+    #[ORM\OneToMany(targetEntity: Reaction::class, mappedBy: 'post', cascade: ['persist', 'remove'], orphanRemoval: true)]
     private ?Collection $reactions;
 
     // Constructeur
@@ -130,12 +129,13 @@ class Post
     public function addReaction(Reaction $reaction): static
     {
         if (!$this->reactions->contains($reaction)) {
+            // Ajoute la réaction à la collection
             $this->reactions->add($reaction);
+    
+            // Définit le post de la réaction uniquement si nécessaire
             if ($reaction->getPost() !== $this) {
                 $reaction->setPost($this);
             }
-        } else {
-            throw new \LogicException('categorie.post.already_associated');
         }
     
         return $this;
